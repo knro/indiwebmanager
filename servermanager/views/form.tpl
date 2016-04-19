@@ -86,10 +86,11 @@
     <div class="row">
         <div class="col-sm-6">
             <button id="server_command" onClick="toggleServer()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> Start</button>
+            <div id="notify_message"></div>
         </div>
         <div class="col-sm-6">
             <label>Server Status</label>
-            <div id="server_notify" class="well"></div>
+            <div id="server_notify" class="well"></div>            
         </div>
     </div>        
     
