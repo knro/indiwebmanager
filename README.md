@@ -84,10 +84,10 @@ INDI Web Manager provides a RESTful API to control all aspects of the applicatio
 ## INDI Server Methods
 
 ### Get Server Status
-| url     | /api/server/status                  |
-| method  | GET                                 |
-| returns | INDI server status (running or not) |
-| format  | {'server', bool}                    |
+
+URL                 |   Method      |       Return                          | Format
+:------------------:|:-------------:|:-------------------------------------:|:-----------------
+/api/server/status       GET          INDI server status (running or not)      {'server', bool}
 
 ### Get drivers list
 * url: /api/server/drivers
