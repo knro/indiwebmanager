@@ -1,11 +1,9 @@
 #!/usr/bin/python
 
 from bottle import Bottle, run, template, static_file, request
-from parsedrivers import driversList, findDriverByLabel
 from servermanager import startServer, stopServer, isServerRunning, getRunningDrivers
-import json
-import db
-import os
+from parsedrivers import *
+import db, json, os
 
 dirname, filename = os.path.split(os.path.abspath(__file__))
 os.chdir(dirname)
@@ -60,7 +58,6 @@ def save_profile_drivers(item):
     data = request.json;
     db.save_profile_drivers(item, data) 
 
-
 ''' Server Options '''
 # Server Status
 @app.get('/api/server/status')
@@ -83,24 +80,49 @@ def get_server_status():
 @app.post('/api/server/start')
 def start_server():
     from bottle import response
-    print ("start server called....")
+    #print ("start server called....")
     drivers    = request.json
     port       = 7624
     alldrivers = []
+    profile    = ""
     for driver in drivers:
         if "port" in driver:            
             port = driver['port']
             response.set_cookie("indiserver_port", port, None, max_age=3600000, path='/')
             #print("driver port is " + driver['port'])
         elif "profile" in driver:
-            response.set_cookie("indiserver_profile", driver['profile'], None, max_age=3600000, path='/')
-        else:            
-            #print(driver['label'])
+            profile = driver['profile']
+            response.set_cookie("indiserver_profile", profile, None, max_age=3600000, path='/')
+        elif "name" in driver:            
+            oneDriver = findDriverByName(driver['name'])
+            alldrivers.append(oneDriver)
+        elif "label" in driver:            
             oneDriver = findDriverByLabel(driver['label'])
             alldrivers.append(oneDriver)
+        elif "binary" in driver:            
+            oneDriver = findDriverByBinary(driver['binary'])
+            alldrivers.append(oneDriver)
+            
+    # If we don't have any driver list but we have a profile name
+    # we fetch labels from database for this profile
+    if (not alldrivers and profile):
+        drivers = db.get_profile_drivers_labels(profile)
+        for driver in drivers:
+            oneDriver = findDriverByLabel(driver['label'])
+            alldrivers.append(oneDriver)
+        # Find if we have any custom drivers
+        custom_drivers = db.get_profile_custom_drivers(profile)
+        if (custom_drivers):
+            custom_drivers = custom_drivers['drivers'].split(',')
+            for driver in custom_drivers:
+                newDriver = DeviceDriver(driver, driver, "1.0", driver, "Custom")
+                alldrivers.append(newDriver)        
             
     #print ("calling start server internal function")
-    startServer(port, alldrivers)
+    if alldrivers:
+        startServer(port, alldrivers)
+    
+            
     
 
 # Stop INDI Server
@@ -150,15 +172,23 @@ def get_json_profiles():
     json_string = json.dumps(results)
     return json_string 
 
-# Get drivers of specific profile
+# Get driver labels of specific profile
 @app.get('/api/profiles/<item>')
 def get_profile(item):
     from json import dumps
-    results = db.get_profile_drivers(item)
+    results = db.get_profile_drivers_labels(item)
+    json_string = json.dumps(results)
+    return json_string
+
+# Get custom drivers of specific profile
+@app.get('/api/profiles/<item>/custom')
+def get_profile(item):
+    from json import dumps
+    results = db.get_profile_custom_drivers(item)
     json_string = json.dumps(results)
     return json_string
 
 
-#run(app, host='0.0.0.0', port=8080, debug=True, reloader=True)
-run(app, host='0.0.0.0', port=8080, debug=True)
+run(app, host='0.0.0.0', port=8080, debug=True, reloader=True)
+#run(app, host='0.0.0.0', port=8080, debug=True)
 

@@ -39,13 +39,22 @@
 
    $("#drivers_list :selected").each(function (i,sel) 
    {
-       drivers.push("{\"label\" : \"" + $(sel).text() + "\"}");    
+       drivers.push({"label" : $(sel).text()});
    }
-   );         
+   );
+
+   // Check for custom drivers   
+   var custom    = $("#custom_drivers").val();
+   console.log("custom drivers " + custom);
+   if (custom)
+   {
+       drivers.push({"custom" : custom });
+       console.log({"custom" : custom });
+   }
    
    drivers = JSON.stringify(drivers);
    
-   //console.log("my json string is " + drivers);
+   console.log("my json string is " + drivers);
 
     $.ajax(
     {
@@ -73,30 +82,30 @@
     var name    = $("#profiles option:selected").text();
     var url     =  "/api/profiles/" + name
     
-    $.ajax(
-    {
-      type: 'GET',
-      url : url,
-      dataType: "json",
-      success: function(drivers)
-      {     
+     $.getJSON(url, function(drivers)
+     {
         $.each(drivers, function(i, driver)
         { 
           var label    = driver.label;
+          console.log("Driver label is " + label);
           var selector = "#drivers_list [value='" + label + "']";
           $(selector).prop('selected', true);
         });
         
         $("#drivers_list").selectpicker('refresh');
-      }
-    },
-    {
-      error: function()
-      {
-        alert('error loading profile drivers');
-      }
-    }    
-    );   
+     });
+     
+     url     =  "/api/profiles/" + name + "/custom";
+     
+     $.getJSON(url, function(drivers)
+     {        
+        if (drivers != "null")
+        {
+            drivers = drivers['drivers'];
+            $("#custom_drivers").val(drivers);
+        }
+     });
+     
   }
 
     function clearDriverSelection()
@@ -162,11 +171,11 @@
       if (status == "Start")
       {
           
-        if ($("#drivers_list :selected").size() == 0)
+        /*if ($("#drivers_list :selected").size() == 0)
         {
             $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>No drivers selected!.</div>');
             return;
-        }
+        }*/
     
         var drivers = [];
         var profile = $("#profiles option:selected").text()
@@ -175,11 +184,11 @@
         drivers.push({'profile' : profile});
         drivers.push({'port' : port});
         
-        $("#drivers_list :selected").each(function (i,sel) 
+        /*$("#drivers_list :selected").each(function (i,sel) 
         {
             drivers.push({'label' : $(sel).text()});    
         }
-        );         
+        );*/         
    
         drivers = JSON.stringify(drivers);
             
@@ -255,7 +264,7 @@
         
         if (counter < $("#drivers_list :selected").size())
         {
-            $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Not all requested drivers are running. Make sure all devices are powered and connected.</div>');
+            $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Not all profile drivers are running. Make sure all devices are powered and connected.</div>');
             return;            
         }
       });

@@ -71,28 +71,40 @@
        </select>
        </div>
      </div>
-   
-   <div class="row">
+      
         <div class="col-sm-6">
             <div class="form-group">
             <label for="serverPort" class="control-label">Port:</label>
             <input class="form-control" id="server_port" type="text" value="{{port}}">
             </div>
         </div>    
-    </div>
     
    </div>
       
     <div class="row">
         <div class="col-sm-6">
+            <div class="form-group">
+                <label for="customDrivers" class="control-label">Custom Drivers:</label>
+                <input class="form-control" id="custom_drivers" type="text" placeholder="driver1@remotehost,driver2@remotehost">
+            </div>
+        
             <button id="server_command" onClick="toggleServer()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> Start</button>
             <div id="notify_message"></div>
         </div>
         <div class="col-sm-6">
-            <label>Server Status</label>
-            <div id="server_notify" class="well"></div>            
+            <div class="form-group">
+                <label>Server Status</label>
+                <div id="server_notify" class="well"></div>
+            </div>
         </div>
-    </div>        
+    </div>
+    
+      
+    <div class="row">
+        <div class="col-sm-6">
+            
+        </div>
+    </div>
     
    </div>
 </div>

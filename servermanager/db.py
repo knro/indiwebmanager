@@ -17,10 +17,17 @@ def get_profiles():
     results = cursor.fetchall()    
     return results
 
-# Get all drivers for a specific profile from database
-def get_profile_drivers(profile_name):
+# Get all drivers labels for a specific profile from database
+def get_profile_drivers_labels(profile_name):
+    #print ("SELECT label FROM driver WHERE profile=(SELECT id FROM profile WHERE name='" + profile_name + "')");
     cursor     = conn.execute("SELECT label FROM driver WHERE profile=(SELECT id FROM profile WHERE name='" + profile_name + "')")
     results = cursor.fetchall()
+    return results
+
+# Get custom drivers list for a specific profile
+def get_profile_custom_drivers(profile_name):
+    cursor     = conn.execute("SELECT drivers FROM custom WHERE profile=(SELECT id FROM profile WHERE name='" + profile_name + "')")
+    results = cursor.fetchone()
     return results
 
 # Delete Profile
@@ -50,10 +57,14 @@ def save_profile_drivers(profile_name, drivers):
     cursor = conn.execute("SELECT id FROM profile WHERE name='" + profile_name + "'");
     profile_id = cursor.fetchone()['id'];
     cursor = conn.execute("DELETE FROM driver WHERE profile =" + str(profile_id));
-    for driver in drivers:
-        oneDriver = json.loads(driver);
-        try:            
-            conn.execute("INSERT INTO driver (label, profile) VALUES('" + oneDriver["label"] + "'," + str(profile_id) + ")");
+    cursor = conn.execute("DELETE FROM custom WHERE profile =" + str(profile_id));
+    for driver in drivers:  
+        print (driver)
+        try:
+            if "label" in driver:
+                conn.execute("INSERT INTO driver (label, profile) VALUES('" + driver["label"] + "'," + str(profile_id) + ")");
+            elif "custom" in driver:
+                conn.execute("INSERT INTO custom (drivers, profile) VALUES('" + driver["custom"] + "'," + str(profile_id) + ")");
         except Exception:
             return "Error adding a driver"
         else:

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import subprocess, sys, psutil
+import subprocess, sys, psutil, re
 from parsedrivers import driversList
 
  #2 Specify INDI FIFO, or leave the default value.
@@ -17,7 +17,7 @@ def clearFIFO():
 
 def startINDIServer(port=7624):
     cmd = 'indiserver -p ' + str(port) + ' -m 100 -v -f ' + indi_fifo + ' > /dev/null 2>&1 &'
-    #print cmd
+    print cmd
     sys.stdout.flush()
     subprocess.call(cmd, shell=True)    
     
@@ -31,8 +31,14 @@ def sendCommand(command):
     return output
 
 def startINDIDriver(driver):
-    cmd = 'echo start ' + driver + ' > ' + indi_fifo
-    #print cmd
+    cmd = None
+    if "@" in driver.binary:
+        # escape quotes if they exist
+        driver.binary = driver.binary.replace('"','\\"')
+        cmd = 'echo \"start ' + driver.binary + '\" > ' + indi_fifo
+    else:        
+        cmd = 'echo \"start ' + driver.binary + ' -n \"' + driver.label + '\"\"  > ' + indi_fifo        
+    print cmd
     sys.stdout.flush()
     subprocess.call(cmd, shell=True)
 
@@ -62,18 +68,16 @@ def getINDIState(deviceName, propertyName):
 def startServer(port, drivers):
     clearFIFO()
     startINDIServer(port)
-    activeDrivers=drivers
     for driver in drivers:
-        #print "Starting driver with executable " + driver.binary
+        print ("Driver binary is " + driver.binary)
         sys.stdout.flush()
-        startINDIDriver(driver.binary)
+        startINDIDriver(driver)
     
 def stopServer():
     cmd = "pkill indiserver"
-    #print cmd
+    print cmd
     sys.stdout.flush()
     subprocess.call(cmd, shell=True)
-    #activeDrivers=[]
     
 def isServerRunning():
     for proc in psutil.process_iter():

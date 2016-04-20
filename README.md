@@ -1,6 +1,6 @@
 # INDI Web Manager
 
-INDI Web Manager is a simple Web Application to manage [INDI](http://www.indilib.org) driver. It supports multiple driver profilles, start, and shutdown of INDI server.
+INDI Web Manager is a simple Web Application to manage [INDI](http://www.indilib.org) server. It supports multiple driver profiles along with optional custom remote drivers. It can be used to start INDI server locally, and also to connect or **chain** to remote INDI servers.
 
 # Installation
 
@@ -74,3 +74,27 @@ If all appears OK, you can start using the Web Application using any browser.
 # Profiles
 
 The Web Application provides a default profile to run simulator drivers. To use a new profile, add the profile name and then click  the plus button. Next, select which drivers to run under this particular profile. After selecting the drivers, click the **Save** icon to save all your changes.
+
+# API
+
+INDI Web Manager provides a RESTful API to control all aspects of the application. Data communication is via JSON messages. All URLs are appended to the hostname:port running the INDI Web Manager.
+
+## INDI Server Methods
+
+### Get Server Status
+* url: /api/server/status
+* method: GET
+* Returns INDI server status (running or not)
+* format: {'server', bool}
+
+### Get drivers list
+* url: /api/server/drivers
+* method: GET
+* Returns an array for all the drivers available in the device. It only returns a list of the drivers labels.
+* format: {'driver': driver_executable}
+
+### TODO
+
+# Author
+
+Jasem Mutlaq (mutlaqja@ikarustech.com)

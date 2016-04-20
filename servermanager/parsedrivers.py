@@ -51,10 +51,14 @@ def findDriverByLabel(label):
         #print ("comparing between " + driver.label + " and request " + label)
         if (driver.label == label):
             return driver
+                
+def findDriverByName(name):
+    for driver in driversList:
+        if (driver.label == name):
+            return driver
         
-        
-#def findDriverByName(label):
-    #for driver in driversList:
-        #if (driver.label == label):
-            #return driver
+def findDriverByBinary(binary):
+    for driver in driversList:
+        if (driver.binary == binary):
+            return driver
         
