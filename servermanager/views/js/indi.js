@@ -3,8 +3,16 @@
   {
     loadCurrentProfileDrivers();            
     getStatus();
+    
+    $( "#drivers_list" ).change(function() 
+    { 
+        var name    = $("#profiles option:selected").text();
+        saveProfileDrivers(name, true);                
+    });
   }
   );
+  
+  
   
   function saveProfile()
   {
@@ -31,7 +39,7 @@
     );
   }
   
-  function saveProfileDrivers(profile)
+  function saveProfileDrivers(profile, silent=false)
   {
 
     var url     =  "/api/profiles/" + profile + "/";    
@@ -45,7 +53,7 @@
 
    // Check for custom drivers   
    var custom    = $("#custom_drivers").val();
-   console.log("custom drivers " + custom);
+   //console.log("custom drivers " + custom);
    if (custom)
    {
        drivers.push({"custom" : custom });
@@ -54,7 +62,7 @@
    
    drivers = JSON.stringify(drivers);
    
-   console.log("my json string is " + drivers);
+   //console.log("my json string is " + drivers);
 
     $.ajax(
     {
@@ -65,7 +73,8 @@
       success: function()
       {     
         //console.log("Drivers added successfully to profile");
-        $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Profile ' + profile + ' saved.</div>');
+          if (silent == false)
+              $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Profile ' + profile + ' saved.</div>');
       },
       error: function()
       {
@@ -87,7 +96,7 @@
         $.each(drivers, function(i, driver)
         { 
           var label    = driver.label;
-          console.log("Driver label is " + label);
+          //console.log("Driver label is " + label);
           var selector = "#drivers_list [value='" + label + "']";
           $(selector).prop('selected', true);
         });
@@ -98,8 +107,8 @@
      url     =  "/api/profiles/" + name + "/custom";
      
      $.getJSON(url, function(drivers)
-     {        
-        if (drivers != "null")
+     {               
+        if (drivers)
         {
             drivers = drivers['drivers'];
             $("#custom_drivers").val(drivers);
@@ -169,8 +178,7 @@
       var status = $.trim($("#server_command").text());
       
       if (status == "Start")
-      {
-          
+      {                   
         /*if ($("#drivers_list :selected").size() == 0)
         {
             $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>No drivers selected!.</div>');
@@ -178,8 +186,8 @@
         }*/
     
         var drivers = [];
-        var profile = $("#profiles option:selected").text()
-        var port    = $("#server_port").val();        
+        var profile = $("#profiles option:selected").text();
+        var port    = $("#server_port").val();
         
         drivers.push({'profile' : profile});
         drivers.push({'port' : port});
