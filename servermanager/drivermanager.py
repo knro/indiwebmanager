@@ -5,6 +5,10 @@ from parsedrivers import driversList, findDriverByLabel
 from servermanager import startServer, stopServer, isServerRunning, getRunningDrivers
 import json
 import db
+import os
+
+dirname, filename = os.path.split(os.path.abspath(__file__))
+os.chdir(dirname)
 
 app = Bottle()
 

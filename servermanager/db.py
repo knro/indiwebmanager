@@ -1,4 +1,6 @@
-import sqlite3, json
+import sqlite3, json, os
+
+dirname, filename = os.path.split(os.path.abspath(__file__))
 
 def dict_factory(cursor, row):
     d = {}
@@ -6,7 +8,7 @@ def dict_factory(cursor, row):
         d[col[0]] = row[idx]
     return d
 
-conn = sqlite3.connect("profiles.db")
+conn = sqlite3.connect(dirname+"/profiles.db")
 conn.row_factory = dict_factory
 
 # Get all profiles from database        
