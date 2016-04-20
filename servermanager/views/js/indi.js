@@ -9,10 +9,15 @@
         var name    = $("#profiles option:selected").text();
         saveProfileDrivers(name, true);                
     });
+
+    $( "#custom_drivers" ).change(function()
+    {
+        var name    = $("#profiles option:selected").text();
+        saveProfileDrivers(name, true);
+    });
+
   }
   );
-  
-  
   
   function saveProfile()
   {
