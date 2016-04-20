@@ -85,15 +85,14 @@ INDI Web Manager provides a RESTful API to control all aspects of the applicatio
 
 ### Get Server Status
 
-|URL                 |   Method      |       Return                          | Format         |
-:------------------:|:-------------:|:-------------------------------------:|:-----------------
-/api/server/status       GET          INDI server status (running or not)      {'server', bool}
+ URL | Method | Return | Format
+--- | --- | --- | --- 
+/api/server/status | GET | INDI server status (running or not) | {'server', bool}
 
-### Get drivers list
-* url: /api/server/drivers
-* method: GET
-* Returns an array for all the drivers available in the device. It only returns a list of the drivers labels.
-* format: {'driver': driver_executable}
+### Get running drivers list
+URL | Method | Return | Format
+--- | --- | --- | --- 
+/api/server/drivers | GET | Returns an array for all the locally running drivers | {'driver': driver_executable}
 
 ### TODO
 
