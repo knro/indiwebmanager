@@ -37,6 +37,7 @@ After=multi-user.target
 
 [Service]
 Type=idle
+User=pi
 ExecStart=/usr/bin/python /home/pi/servermanager/drivermanager.py
 
 [Install]
