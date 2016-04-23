@@ -43,7 +43,7 @@ ExecStart=/usr/bin/python /home/pi/servermanager/drivermanager.py
 WantedBy=multi-user.target
 ```
 
-The above service files assumes you copied the servermanager directory to /home/pi, so change it to whereever you installed the directory on your target system.
+The above service files assumes you copied the servermanager directory to /home/pi, so change it to whereever you installed the directory on your target system. The user is also specified as **pi** and must be changed to your username.
 
 Copy the indiwebmanager.service file to **/lib/systemd/system**:
 
