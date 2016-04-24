@@ -9,7 +9,7 @@ INDI Web Manager is a simple Web Application to manage [INDI](http://www.indilib
 INDI Library must be installed on the target system. The Web Application is based on [Bottle Py](http://bottlepy.org) micro-framework. It has a built-in webserver and by default listens on port 8080. Install the pre-requisites:
 
 ```
-$ sudo apt-get install python-dev
+$ sudo apt-get install python-dev python-pip
 $ sudo pip install psutil
 ```
 
