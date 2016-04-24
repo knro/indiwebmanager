@@ -55,7 +55,14 @@ def add_profile(profile_name):
 def save_profile_drivers(profile_name, drivers):
     cursor = conn.cursor();    
     cursor = conn.execute("SELECT id FROM profile WHERE name='" + profile_name + "'");
-    profile_id = cursor.fetchone()['id'];
+    result = cursor.fetchone();
+    # Add profile if it doesn't exist yet
+    if (result == None):
+        add_profile(profile_name)
+        cursor = conn.execute("SELECT id FROM profile WHERE name='" + profile_name + "'");
+        result = cursor.fetchone();
+
+    profile_id = result['id'];
     cursor = conn.execute("DELETE FROM driver WHERE profile =" + str(profile_id));
     cursor = conn.execute("DELETE FROM custom WHERE profile =" + str(profile_id));
     for driver in drivers:  
