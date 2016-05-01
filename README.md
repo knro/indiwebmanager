@@ -99,17 +99,21 @@ INDI Web Manager provides a RESTful API to control all aspects of the applicatio
 /api/server/start | POST | None | []
 
 To start INDI server, you should send:
-#### Port (port): If no port is specified, the server will start on the default port 7624
-#### Profile Name (profile) OR;
-#### List of drivers names (name) and/or labels (label) and/or exeutable (binary)
+* Port (port): If no port is specified, the server will start on the default port 7624
+* Profile Name (profile) OR;
+* List of drivers names (name) and/or labels (label) and/or exeutable (binary)
 
 Example #1: Start the **Simulators** profile on port 8000:
 
-'''curl -H "Content-Type: application/json" -X POST -d '[{"profile":"Simulators"},{"port":"8000"}]' http://localhost:8080/api/server/start'''
+```
+curl -H "Content-Type: application/json" -X POST -d '[{"profile":"Simulators"},{"port":"8000"}]' http://localhost:8080/api/server/start
+```
 
 Example #2: Start driver indi_eqmod_telescope and indi_sbig_ccd on default port:
 
-'''curl -H "Content-Type: application/json" -X POST -d '[{"binary":"indi_eqmod_telescope"},{"binary":"indi_sbig_ccd"}]' http://localhost:8080/api/server/start'''
+```
+curl -H "Content-Type: application/json" -X POST -d '[{"binary":"indi_eqmod_telescope"},{"binary":"indi_sbig_ccd"}]' http://localhost:8080/api/server/start
+```
 
 ### Stop Server
 URL | Method | Return | Format
@@ -133,7 +137,9 @@ URL | Method | Return | Format
 
 To add a profile named **foo**:
 
-'''curl -H "Content-Type: application/json" -X POST http://localhost:8080/api/profiles/foo'''
+```
+curl -H "Content-Type: application/json" -X POST http://localhost:8080/api/profiles/foo
+```
 
 ### Delete profile
 URL | Method | Return | Format
@@ -142,14 +148,16 @@ URL | Method | Return | Format
 
 To delete a profile named **foo**:
 
-'''curl -X DELETE http://localhost:8080/api/profiles/foo'''
+```
+curl -X DELETE http://localhost:8080/api/profiles/foo
+```
 
 ### Get All Profiles
 URL | Method | Return | Format
 --- | --- | --- | --- 
 /api/profiles | GET | None | None
 
-**Example:**: '''curl http://localhost:8080/api/profiles'''
+**Example:**: ```curl http://localhost:8080/api/profiles```
 **Reply**: [{"id": 1, "name": "Simulators"}, {"id": 2, "name": "foo"}
 
 ### TODO
