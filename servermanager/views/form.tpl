@@ -110,7 +110,7 @@
 </div>
 
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="/static/js/jquery.min.js"></script>
 <script src="/static/js/bootstrap.min.js"></script>
 <script src="/static/js/bootstrap-select.min.js"></script>
 <script src="/static/js/jquery-ui.min.js"></script>
