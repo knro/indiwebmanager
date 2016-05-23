@@ -44,9 +44,12 @@
     );
   }
   
-  function saveProfileDrivers(profile, silent=false)
+  //function saveProfileDrivers(profile, silent=false)
+  function saveProfileDrivers(profile, silent)
   {
 
+    if (typeof(silent)==='undefined') silent = false;
+    
     var url     =  "/api/profiles/" + profile + "/";    
     var drivers = [];
 
