@@ -15,6 +15,10 @@ app = Bottle()
 def callback(path):
     return static_file(path, root="./views")
 
+@app.route('/favicon.ico', method='GET')
+def get_favicon():
+    return static_file('favicon.ico', root='./')
+
 # Main Page
 @app.route('/')
 def form(): 
