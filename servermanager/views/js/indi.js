@@ -15,7 +15,7 @@
         var name    = $("#profiles option:selected").text();
         saveProfileDrivers(name, true);
     });
-
+        
   }
   );
   
@@ -39,6 +39,34 @@
       error: function()
       {
         alert('error add new  profile failed');
+      }
+    }    
+    );
+  }
+  
+  function saveAutoProfile()
+  {
+	  var options = profiles.options;
+	  var name    = options[options.selectedIndex].value;
+	  var url     =  "/api/profiles/autostart/";
+	  if ($('#auto_profile').is(':checked'))
+		  url    += name;
+	  else
+		  url    += "None";
+    
+    console.log(url)
+        
+    $.ajax(
+    {
+      type: 'POST',
+      url : url,
+      success: function()
+      {     
+        console.log("saved new auto profile " + name);        
+      },
+      error: function()
+      {
+        alert('error saving new auto profile failed');
       }
     }    
     );

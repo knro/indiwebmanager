@@ -11,6 +11,25 @@ def dict_factory(cursor, row):
 conn = sqlite3.connect(dirname+"/profiles.db")
 conn.row_factory = dict_factory
 
+# Get auto start profile        
+def get_autoprofile():
+    cursor = conn.execute("SELECT profile FROM autostart")
+    result = cursor.fetchone()
+    if result:
+        return result['profile']
+    else:
+        return ''
+
+# save auto profile
+def save_autoprofile(profile):
+    cursor = conn.cursor();    
+    try:
+        conn.execute("UPDATE autostart SET profile='" + profile + "'")       
+    except Exception:
+        return "Error saving auto profile"
+    else:
+        conn.commit()
+    
 # Get all profiles from database        
 def get_profiles():
     cursor = conn.execute("SELECT * FROM profile")
@@ -37,9 +56,9 @@ def delete_profile(profile_name):
         conn.execute("DELETE FROM driver WHERE profile=(SELECT id FROM profile WHERE name='" + profile_name + "')")
         conn.execute("DELETE FROM profile WHERE name='" + profile_name + "'");        
     except Exception:
-        return "Error deleting profile";
+        return "Error deleting profile"
     else:
-        conn.commit();
+        conn.commit()
         
 # Add Profile
 def add_profile(profile_name):

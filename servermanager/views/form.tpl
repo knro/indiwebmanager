@@ -37,9 +37,15 @@
            </select>              
            <span class="input-group-btn">
              <button class="btn btn-default" onCLick="saveProfile()" data-toggle="tooltip" title="Save Profile"><span class="glyphicon glyphicon-save" aria-hidden="true"></span></button>
-             <button class="btn btn-default" onClick="removeProfile()" data-toggle="tooltip" title="Delete Profile"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button>
+             <button class="btn btn-default" onClick="removeProfile()" data-toggle="tooltip" title="Delete Profile"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button>             
            </span>
-         </div>
+		</div>
+    %if (autoProfile == saved_profile):
+    	<div class="checkbox"><label><input id="auto_profile" onChange="saveAutoProfile()" type="checkbox" value="Autostart" checked>Auto Start</label></div>
+    %else:
+        <div class="checkbox"><label><input id="auto_profile" onChange="saveAutoProfile()" type="checkbox" value="Autostart">Auto Start</label></div>
+    %end
+		
        </div>
      </div>
 
@@ -76,7 +82,7 @@
             <div class="form-group">
             <label for="serverPort" class="control-label">Port:</label>
             <input class="form-control" id="server_port" type="text" value="{{port}}">
-            </div>
+            </div>                        
         </div>    
     
    </div>

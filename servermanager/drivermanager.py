@@ -9,7 +9,7 @@ dirname, filename = os.path.split(os.path.abspath(__file__))
 os.chdir(dirname)
 
 app = Bottle()
-
+  
 # Server static files  
 @app.route('/static/<path:path>')
 def callback(path):
@@ -36,17 +36,23 @@ def form():
     saved_profile = request.get_cookie("indiserver_profile")
     if not saved_profile:
         saved_profile = "Simualtors"
+        
+    autoProfile = get_autoprofile()
             
     allProfiles = get_profiles()
-    return template('form.tpl', allProfiles=allProfiles, allDrivers=allDrivers, port=port, saved_profile=saved_profile)
+    return template('form.tpl', allProfiles=allProfiles, allDrivers=allDrivers, port=port, saved_profile=saved_profile, autoProfile=autoProfile)
 
 ''' Profile Operations '''
+
+# Get auto start profile
+def get_autoprofile():
+    return db.get_autoprofile()
 
 # Get all profiles
 def get_profiles():
     return db.get_profiles()
 
-# Add new profile        
+# Add new profile 
 @app.post('/api/profiles/<item>')
 def add_profile(item):
     db.add_profile(item)
@@ -62,6 +68,11 @@ def save_profile_drivers(item):
     data = request.json;
     db.save_profile_drivers(item, data) 
 
+# Set autostart profile
+@app.post('/api/profiles/autostart/<item>')
+def save_autoprofile(item):
+    db.save_autoprofile(item)
+    
 ''' Server Options '''
 # Server Status
 @app.get('/api/server/status')
@@ -72,7 +83,7 @@ def get_server_status():
 
 # Server Drivers
 @app.get('/api/server/drivers')
-def get_server_status():
+def get_server_drivers():
     status = []
     for driver in getRunningDrivers():
         status.append({'driver' : driver })        
