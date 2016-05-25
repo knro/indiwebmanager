@@ -19,16 +19,6 @@ def get_autoprofile():
         return result['profile']
     else:
         return ''
-
-# save auto profile
-def save_autoprofile(profile):
-    cursor = conn.cursor();    
-    try:
-        conn.execute("UPDATE autostart SET profile='" + profile + "'")       
-    except Exception:
-        return "Error saving auto profile"
-    else:
-        conn.commit()
     
 # Get all profiles from database        
 def get_profiles():
@@ -50,8 +40,7 @@ def get_profile_custom_drivers(profile_name):
     return results
 
 # Delete Profile
-def delete_profile(profile_name):
-    cursor = conn.cursor();    
+def delete_profile(profile_name):   
     try:
         conn.execute("DELETE FROM driver WHERE profile=(SELECT id FROM profile WHERE name='" + profile_name + "')")
         conn.execute("DELETE FROM profile WHERE name='" + profile_name + "'");        
@@ -63,16 +52,41 @@ def delete_profile(profile_name):
 # Add Profile
 def add_profile(profile_name):
     try:
-        cursor = conn.cursor();
         conn.execute("INSERT INTO profile (name) VALUES('" + profile_name + "')");
     except Exception:
         return "Error adding profile. Profile already exists."
     else:
         conn.commit();
+
+# Get profile info
+def get_profile(name):
+    cursor = conn.execute("SELECT * FROM profile WHERE name='" + name + "'");
+    result = cursor.fetchone();
+    return result
+
+# Update profile info
+def update_profile(name, port, autostart):
+    # If we have a driver with autostart, reset everyone to 0
+    if (autostart == 1):
+        conn.execute("UPDATE profile SET autostart=0");
+        conn.commit();
         
+    cursor = conn.execute("SELECT id FROM profile WHERE name='" + name + "'");
+    result = cursor.fetchone();
+    # Return if no profile exists
+    if (result == None):
+        return
+
+    profile_id = result['id'];
+    try:
+        conn.execute("UPDATE profile SET port=" + port + ",autostart=" + autostart + " WHERE id =" + str(profile_id));
+    except Exception:
+        return "Error updating profile info"
+    else:
+        conn.commit();
+     
 # Save profile drivers
-def save_profile_drivers(profile_name, drivers):
-    cursor = conn.cursor();    
+def save_profile_drivers(profile_name, drivers):   
     cursor = conn.execute("SELECT id FROM profile WHERE name='" + profile_name + "'");
     result = cursor.fetchone();
     # Add profile if it doesn't exist yet
@@ -81,7 +95,7 @@ def save_profile_drivers(profile_name, drivers):
         cursor = conn.execute("SELECT id FROM profile WHERE name='" + profile_name + "'");
         result = cursor.fetchone();
 
-    profile_id = result['id'];
+    profile_id = result['id'];    
     cursor = conn.execute("DELETE FROM driver WHERE profile =" + str(profile_id));
     cursor = conn.execute("DELETE FROM custom WHERE profile =" + str(profile_id));
     for driver in drivers:  

@@ -44,17 +44,18 @@
     );
   }
   
-  function saveAutoProfile()
+  function saveProfileInfo()
   {
-	  var options = profiles.options;
-	  var name    = options[options.selectedIndex].value;
-	  var url     =  "/api/profiles/autostart/";
-	  if ($('#auto_profile').is(':checked'))
-		  url    += name;
-	  else
-		  url    += "None";
-    
-    console.log(url)
+	  var options  = profiles.options;
+	  var name     = options[options.selectedIndex].value;
+	  console.log(name);
+	  var port     = $("#profile_port").val();
+	  console.log(port);
+	  var autostart= ($('#profile_auto').is(':checked')) ? 1 : 0;
+	  console.log(autostart);
+	  var url     =  "/api/profiles/" + name + "/" + port + "/" + autostart;
+	  
+    console.log(url);
         
     $.ajax(
     {
@@ -62,7 +63,7 @@
       url : url,
       success: function()
       {     
-        console.log("saved new auto profile " + name);        
+        //console.log("saved new auto profile " + name);        
       },
       error: function()
       {
@@ -71,7 +72,7 @@
     }    
     );
   }
-  
+   
   //function saveProfileDrivers(profile, silent=false)
   function saveProfileDrivers(profile, silent)
   {
@@ -125,7 +126,7 @@
     clearDriverSelection();
         
     var name    = $("#profiles option:selected").text();
-    var url     =  "/api/profiles/" + name
+    var url     =  "/api/profiles/" + name + "/labels";
     
      $.getJSON(url, function(drivers)
      {
@@ -151,14 +152,34 @@
         }
      });
      
+     loadProfileData();
+     
+  }
+  
+  function loadProfileData()
+  {        
+    var name    = $("#profiles option:selected").text();
+    var url     =  "/api/profiles/" + name;
+    
+     $.getJSON(url, function(info)
+     {
+    	if (info['autostart'] == 1)
+    		$("#profile_auto").prop("checked", true);
+    	else
+    		$("#profile_auto").prop("checked", false);
+    	
+    	$("#profile_port").val(info['port']);
+    	
+     });                    
   }
 
     function clearDriverSelection()
   {
     $("#drivers_list option").prop('selected', false);
     $("#drivers_list").selectpicker('refresh');
-    //console.log("done with clearDriverSelection");
-    
+    // Uncheck Auto Start
+    $("#profile_auto").prop("checked", false);
+    $("#profile_port").val("7624");
   }
   
   function addNewProfile()
@@ -168,7 +189,8 @@
       {      
         //console.log("profile is " + profile_name);
         $("#profiles").append("<option id='" + profile_name + "' selected>" + profile_name + "</option>");
-        clearDriverSelection();
+        
+        clearDriverSelection();        
         
         $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Profile ' + profile_name + ' created. Select the profile drivers and then save the profile.</div>');
       }
@@ -214,34 +236,14 @@
       var status = $.trim($("#server_command").text());
       
       if (status == "Start")
-      {                   
-        /*if ($("#drivers_list :selected").size() == 0)
-        {
-            $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>No drivers selected!.</div>');
-            return;
-        }*/
-    
-        var drivers = [];
+      {                           
         var profile = $("#profiles option:selected").text();
-        var port    = $("#server_port").val();
-        
-        drivers.push({'profile' : profile});
-        drivers.push({'port' : port});
-        
-        /*$("#drivers_list :selected").each(function (i,sel) 
-        {
-            drivers.push({'label' : $(sel).text()});    
-        }
-        );*/         
-   
-        drivers = JSON.stringify(drivers);
+        var url     = "/api/server/start/" + profile;        
             
         $.ajax(
         {
         type: 'POST',
-        url : '/api/server/start',
-        data: drivers,
-        contentType: "application/json; charset=utf-8",
+        url : url,
         success: function()
         {                 
             //console.log("INDI Server started!");

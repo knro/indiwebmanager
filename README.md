@@ -38,12 +38,15 @@ After=multi-user.target
 Type=idle
 User=pi
 ExecStart=/usr/bin/python /home/pi/servermanager/drivermanager.py
+ExecStartPost=/usr/bin/python /home/pi/servermanager/autostart.py
 
 [Install]
 WantedBy=multi-user.target
 ```
 
 The above service files assumes you copied the servermanager directory to /home/pi, so change it to whereever you installed the directory on your target system. The user is also specified as **pi** and must be changed to your username.
+
+If you selected any profile as **Auto Start** then the INDI server shall be automatically started when the service is executed on start up.
 
 Copy the indiwebmanager.service file to **/lib/systemd/system**:
 
@@ -75,7 +78,7 @@ If all appears OK, you can start using the Web Application using any browser.
 
 # Profiles
 
-The Web Application provides a default profile to run simulator drivers. To use a new profile, add the profile name and then click  the plus button. Next, select which drivers to run under this particular profile. After selecting the drivers, click the **Save** icon to save all your changes.
+The Web Application provides a default profile to run simulator drivers. To use a new profile, add the profile name and then click  the plus button. Next, select which drivers to run under this particular profile. After selecting the drivers, click the **Save** icon to save all your changes. To enable automatic startup of INDI server for a particular profile when the device boots up or when invoked manually via the **systemctl** command, check the **Auto Start** checkbox.
 
 # API
 
@@ -93,26 +96,8 @@ INDI Web Manager provides a RESTful API to control all aspects of the applicatio
 **Reply:** [{"status": "False"}]
 
 ### Start Server
- URL | Method | Return | Format
---- | --- | --- | --- 
-/api/server/start | POST | None | []
-
-To start INDI server, you should send:
-* Port (port): If no port is specified, the server will start on the default port 7624
-* Profile Name (profile) OR;
-* List of drivers names (name) and/or labels (label) and/or exeutable (binary)
-
-Example #1: Start the **Simulators** profile on port 8000:
-
-```
-curl -H "Content-Type: application/json" -X POST -d '[{"profile":"Simulators"},{"port":"8000"}]' http://localhost:8080/api/server/start
-```
-
-Example #2: Start driver indi_eqmod_telescope and indi_sbig_ccd on default port:
-
-```
-curl -H "Content-Type: application/json" -X POST -d '[{"binary":"indi_eqmod_telescope"},{"binary":"indi_sbig_ccd"}]' http://localhost:8080/api/server/start
-```
+ 
+ TODO
 
 ### Stop Server
 URL | Method | Return | Format
@@ -152,12 +137,8 @@ curl -X DELETE http://localhost:8080/api/profiles/foo
 ```
 
 ### Get All Profiles
-URL | Method | Return | Format
---- | --- | --- | --- 
-/api/profiles | GET | None | None
 
-**Example:**: ```curl http://localhost:8080/api/profiles```
-**Reply**: [{"id": 1, "name": "Simulators"}, {"id": 2, "name": "foo"}
+TODO
 
 ### TODO
 

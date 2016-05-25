@@ -40,12 +40,7 @@
              <button class="btn btn-default" onClick="removeProfile()" data-toggle="tooltip" title="Delete Profile"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button>             
            </span>
 		</div>
-    %if (autoProfile == saved_profile):
-    	<div class="checkbox"><label><input id="auto_profile" onChange="saveAutoProfile()" type="checkbox" value="Autostart" checked>Auto Start</label></div>
-    %else:
-        <div class="checkbox"><label><input id="auto_profile" onChange="saveAutoProfile()" type="checkbox" value="Autostart">Auto Start</label></div>
-    %end
-		
+		<div class="checkbox"><label><input id="profile_auto" onChange="saveProfileInfo()" type="checkbox" value="Autostart">Auto Start</label></div>    	
        </div>
      </div>
 
@@ -81,7 +76,7 @@
         <div class="col-sm-6">
             <div class="form-group">
             <label for="serverPort" class="control-label">Port:</label>
-            <input class="form-control" id="server_port" type="text" value="{{port}}">
+            <input id="profile_port" onChange="saveProfileInfo()" class="form-control" type="text" value="7624">
             </div>                        
         </div>    
     
