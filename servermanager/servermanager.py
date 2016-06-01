@@ -35,9 +35,9 @@ def startINDIDriver(driver):
     if "@" in driver.binary:
         # escape quotes if they exist
         driver.binary = driver.binary.replace('"','\\"')
-        cmd = 'echo \"start ' + driver.binary + '\" > ' + indi_fifo
+        cmd = 'echo "start ' + driver.binary + '" > ' + indi_fifo
     else:        
-        cmd = 'echo \"start ' + driver.binary + ' -n \"' + driver.label + '\"\"  > ' + indi_fifo        
+        cmd = 'echo "start ' + driver.binary + ' -n \\"' + driver.label + '\\""  > ' + indi_fifo
     print cmd
     sys.stdout.flush()
     subprocess.call(cmd, shell=True)
