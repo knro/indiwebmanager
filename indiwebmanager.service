@@ -4,9 +4,9 @@ After=multi-user.target
 
 [Service]
 Type=idle
-User=jasem
-ExecStart=/usr/bin/python /home/jasem/Projects/development/indiwebmanager/servermanager/drivermanager.py
-ExecStartPost=/usr/bin/python /home/jasem/Projects/development/indiwebmanager/servermanager/autostart.py
+User=pi
+ExecStart=/usr/bin/python /home/pi/servermanager/drivermanager.py
+ExecStartPost=/usr/bin/python /home/pi/servermanager/autostart.py
 
 [Install]
 WantedBy=multi-user.target
