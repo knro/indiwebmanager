@@ -4,7 +4,7 @@ import time
 # Try 3 times
 for i in range(3):
     try:
-        r = requests.post("http://localhost:8080/api/server/autostart")
+        r = requests.post("http://localhost:8624/api/server/autostart")
     except Exception:
         time.sleep(1)    
         continue
