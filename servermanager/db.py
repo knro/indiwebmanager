@@ -65,8 +65,15 @@ def get_profile(name):
     return result
 
 # Update profile info
-def update_profile(name, port, autostart):
+def update_profile(name, data):
     # If we have a driver with autostart, reset everyone to 0
+    autostart=-1
+    port = -1
+    if "autostart" in data:
+        autostart = data["autostart"]
+    if "port" in data:
+        port = data["port"]
+
     if (autostart == 1):
         conn.execute("UPDATE profile SET autostart=0");
         conn.commit();
@@ -79,9 +86,12 @@ def update_profile(name, port, autostart):
 
     profile_id = result['id'];
     try:
-        conn.execute("UPDATE profile SET port=" + port + ",autostart=" + autostart + " WHERE id =" + str(profile_id));
+        if (autostart != -1):
+            conn.execute("UPDATE profile SET autostart=" + str(autostart) + " WHERE id =" + str(profile_id));
+        if (port != -1):
+            conn.execute("UPDATE profile SET port=" + str(port) + " WHERE id =" + str(profile_id));
     except Exception:
-        return "Error updating profile info"
+        return "Error updating profile info ", Exception.message
     else:
         conn.commit();
      

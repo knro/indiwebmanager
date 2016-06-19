@@ -51,31 +51,32 @@ def get_profiles():
     return db.get_profiles()
    
 # Add new profile 
-@app.post('/api/profiles/<item>')
-def add_profile(item):
-    db.add_profile(item)
+@app.post('/api/profiles/<name>')
+def add_profile(name):
+    db.add_profile(name)
 
 # Get one profile info 
 def get_profile(name):
     return db.get_profile(name)    
 
 # Delete Profile        
-@app.delete('/api/profiles/<item>')
-def delete_profile(item):
-    db.delete_profile(item)
+@app.delete('/api/profiles/<name>')
+def delete_profile(name):
+    db.delete_profile(name)
 
 # Update profile info (port & autostart)
-@app.post('/api/profiles/<name>/<port>/<autostart>')
-def update_profile(name, port, autostart):
+@app.put('/api/profiles/<name>')
+def update_profile(name):
     from bottle import response 
-    response.set_cookie("indiserver_profile", name, None, max_age=3600000, path='/')  
-    db.update_profile(name, port, autostart) 
+    response.set_cookie("indiserver_profile", name, None, max_age=3600000, path='/')
+    data = request.json
+    db.update_profile(name, data) 
             
 # Add drivers to existing profile
-@app.post('/api/profiles/<item>/')
-def save_profile_drivers(item):   
-    data = request.json;
-    db.save_profile_drivers(item, data) 
+@app.post('/api/profiles/<name>/drivers')
+def save_profile_drivers(name):   
+    data = request.json
+    db.save_profile_drivers(name, data) 
    
 ''' Server Options '''
 # Server Status

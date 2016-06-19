@@ -53,21 +53,28 @@
 	  console.log(port);
 	  var autostart= ($('#profile_auto').is(':checked')) ? 1 : 0;
 	  console.log(autostart);
-	  var url     =  "/api/profiles/" + name + "/" + port + "/" + autostart;
+	  //var url     =  "/api/profiles/" + name + "/" + port + "/" + autostart;
+      var url     =  "/api/profiles/" + name;
+      
+      var profileInfo = {"port" : port, "autostart" : autostart};
+      profileInfo = JSON.stringify(profileInfo);
+      console.log("Profile info " + profileInfo);
 	  
     console.log(url);
         
     $.ajax(
     {
-      type: 'POST',
+      type: 'PUT',
       url : url,
+      data: profileInfo,
+      contentType: "application/json; charset=utf-8",
       success: function()
       {     
-        //console.log("saved new auto profile " + name);        
+        console.log("Profile " + name + " info is updated");        
       },
       error: function()
       {
-        alert('error saving new auto profile failed');
+        alert('error update profile info failed');
       }
     }    
     );
@@ -79,7 +86,7 @@
 
     if (typeof(silent)==='undefined') silent = false;
     
-    var url     =  "/api/profiles/" + profile + "/";    
+    var url     =  "/api/profiles/" + profile + "/drivers";    
     var drivers = [];
 
    $("#drivers_list :selected").each(function (i,sel) 
