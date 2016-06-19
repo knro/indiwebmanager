@@ -8,7 +8,7 @@
 
   <!-- Set the page to the width of the device and set the zoon level -->
   <meta name="viewport" content="width = device-width, initial-scale = 1">
-  <title>INDI Server Manager</title>
+  <title>INDI Web Manager</title>
   <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.css">
   <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-select.min.css">
   <link rel="stylesheet" type="text/css" href="/static/css/schoolhouse.css">
@@ -18,7 +18,7 @@
 
   <div class="container">
 
-    <h2>INDI Server Manager</h2>
+    <h2>INDI Web Manager</h2>
     <!-- <form> !-->
 
       <div id="firstrow" class="row">
