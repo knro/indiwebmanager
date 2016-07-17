@@ -7,6 +7,8 @@ Type=idle
 User=pi
 ExecStart=/usr/bin/python /home/pi/servermanager/drivermanager.py
 ExecStartPost=/usr/bin/python /home/pi/servermanager/autostart.py
+Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
