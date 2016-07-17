@@ -6,7 +6,7 @@ INDI Web Manager is a simple Web Application to manage [INDI](http://www.indilib
 
 # Installation
 
-INDI Library must be installed on the target system. The Web Application is based on [Bottle Py](http://bottlepy.org) micro-framework. It has a built-in webserver and by default listens on port 8080. Install the pre-requisites:
+INDI Library must be installed on the target system. The Web Application is based on [Bottle Py](http://bottlepy.org) micro-framework. It has a built-in webserver and by default listens on port 8624. Install the pre-requisites:
 
 ```
 $ sudo apt-get install python-dev python-psutil
@@ -23,7 +23,7 @@ $ cd servermanager
 $ python drivermanager.py
 ```
 
-Then using your favorite web browser, go to http://localhost:8080 if the INDI Web Manager is running locally. If the INDI Web Manager is installed on a remote system, simply replace localhost with the hostname or IP address of the remote system.
+Then using your favorite web browser, go to http://localhost:8624 if the INDI Web Manager is running locally. If the INDI Web Manager is installed on a remote system, simply replace localhost with the hostname or IP address of the remote system.
 
 # Auto Start
 
@@ -92,7 +92,7 @@ INDI Web Manager provides a RESTful API to control all aspects of the applicatio
 --- | --- | --- | --- 
 /api/server/status | GET | INDI server status (running or not) | {'server': bool}
 
-**Example:** curl http://localhost:8080/api/server/status
+**Example:** curl http://localhost:8624/api/server/status
 **Reply:** [{"status": "False"}]
 
 ### Start Server
@@ -109,7 +109,7 @@ URL | Method | Return | Format
 --- | --- | --- | --- 
 /api/server/drivers | GET | Returns an array for all the locally running drivers | {'driver': driver_executable}
 
-**Example:** curl http://localhost:8080/api/server/drivers
+**Example:** curl http://localhost:8624/api/server/drivers
 **Reply:** [{"driver": "indi_simulator_ccd"}, {"driver": "indi_simulator_telescope"}, {"driver": "indi_simulator_focus"}]
 
 ## Profiles
@@ -122,7 +122,7 @@ URL | Method | Return | Format
 To add a profile named **foo**:
 
 ```
-curl -H "Content-Type: application/json" -X POST http://localhost:8080/api/profiles/foo
+curl -H "Content-Type: application/json" -X POST http://localhost:8624/api/profiles/foo
 ```
 
 ### Delete profile
@@ -133,7 +133,7 @@ URL | Method | Return | Format
 To delete a profile named **foo**:
 
 ```
-curl -X DELETE http://localhost:8080/api/profiles/foo
+curl -X DELETE http://localhost:8624/api/profiles/foo
 ```
 
 ### Get All Profiles
