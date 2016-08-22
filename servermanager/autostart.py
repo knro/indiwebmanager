@@ -6,7 +6,7 @@ for i in range(3):
     try:
         r = requests.post("http://localhost:8624/api/server/autostart")
     except Exception:
-        time.sleep(1)    
+        time.sleep(1)
         continue
     status_code = r.status_code
     if (status_code == 200):
