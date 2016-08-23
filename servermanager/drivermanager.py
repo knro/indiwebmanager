@@ -2,8 +2,10 @@
 
 from bottle import Bottle, run, template, static_file, request
 from servermanager import startServer, stopServer, isServerRunning, getRunningDrivers
-from parsedrivers import *
-import db, json, os
+from parsedrivers import driversList, findDriverByLabel
+import db
+import json
+import os
 
 dirname, filename = os.path.split(os.path.abspath(__file__))
 os.chdir(dirname)
@@ -12,97 +14,113 @@ app = Bottle()
 
 saved_profile = None
 
-# Server static files  
+
+# Server static files
 @app.route('/static/<path:path>')
 def callback(path):
     return static_file(path, root="./views")
 
+
+# Favicon
 @app.route('/favicon.ico', method='GET')
 def get_favicon():
     return static_file('favicon.ico', root='./')
 
+
 # Main Page
 @app.route('/')
-def form(): 
+def form():
     global saved_profile
     families = get_driver_families()
     allDrivers = {}
     for family in families:
-        drivers = [ob.label for ob in driversList if ob.family==family]
+        drivers = [ob.label for ob in driversList if ob.family == family]
         allDrivers[family] = drivers
-    
-    #port = request.get_cookie("indiserver_port")
-    #print ("cooke port is " + port)
-    #if not port:
+
+    # port = request.get_cookie("indiserver_port")
+    # print ("cooke port is " + port)
+    # if not port:
     #    port = 7624;
-            
+
     if not saved_profile:
         saved_profile = request.get_cookie("indiserver_profile")
         if not saved_profile:
             saved_profile = "Simulators"
-                    
+
     allProfiles = get_profiles()
     return template('form.tpl', allProfiles=allProfiles, allDrivers=allDrivers, saved_profile=saved_profile)
 
 ''' Profile Operations '''
 
+
 # Get all profiles
 def get_profiles():
     return db.get_profiles()
-   
-# Add new profile 
+
+
+# Add new profile
 @app.post('/api/profiles/<name>')
 def add_profile(name):
     db.add_profile(name)
 
-# Get one profile info 
-def get_profile(name):
-    return db.get_profile(name)    
 
-# Delete Profile        
+# Get one profile info
+def get_profile(name):
+    return db.get_profile(name)
+
+
+# Delete Profile
 @app.delete('/api/profiles/<name>')
 def delete_profile(name):
     db.delete_profile(name)
 
+
 # Update profile info (port & autostart)
 @app.put('/api/profiles/<name>')
 def update_profile(name):
-    from bottle import response 
-    response.set_cookie("indiserver_profile", name, None, max_age=3600000, path='/')
+    from bottle import response
+    response.set_cookie("indiserver_profile", name,
+                        None, max_age=3600000, path='/')
     data = request.json
-    db.update_profile(name, data) 
-            
+    db.update_profile(name, data)
+
+
 # Add drivers to existing profile
 @app.post('/api/profiles/<name>/drivers')
-def save_profile_drivers(name):   
+def save_profile_drivers(name):
     data = request.json
-    db.save_profile_drivers(name, data) 
-   
+    db.save_profile_drivers(name, data)
+
 ''' Server Options '''
-# Server Status
+
+
+# Server status
 @app.get('/api/server/status')
 def get_server_status():
-    status = [ { 'status' : str(isServerRunning()) } ]
+    status = [{'status': str(isServerRunning())}]
     json_string = json.dumps(status)
     return json_string
 
-# Server Drivers
+
+# Server Driver
 @app.get('/api/server/drivers')
 def get_server_drivers():
     status = []
     for driver in getRunningDrivers():
-        status.append({'driver' : driver })        
+        status.append({'driver': driver})
     json_string = json.dumps(status)
-    return json_string    
-    
+    return json_string
+
+
 # Start autostart profile if any
 @app.post('/api/server/autostart')
 def autostart_server():
-    profiles = get_profiles();
+    profiles = get_profiles()
     for profile in profiles:
         if profile['autostart'] == 1:
-            start_server(profile['name']);
+            start_server(profile['name'])
             break
+
 
 # Start INDI Server for a specific profile
 @app.post('/api/server/start/<profile>')
@@ -111,9 +129,10 @@ def start_server(profile):
     from bottle import response
     alldrivers = []
     saved_profile = profile
-    response.set_cookie("indiserver_profile", profile, None, max_age=3600000, path='/')
-    info    = db.get_profile(profile)
-    port    = info['port']
+    response.set_cookie("indiserver_profile", profile,
+                        None, max_age=3600000, path='/')
+    info = db.get_profile(profile)
+    port = info['port']
     drivers = db.get_profile_drivers_labels(profile)
     for driver in drivers:
         oneDriver = findDriverByLabel(driver['label'])
@@ -124,12 +143,13 @@ def start_server(profile):
         custom_drivers = custom_drivers['drivers'].split(',')
         for driver in custom_drivers:
             newDriver = DeviceDriver(driver, driver, "1.0", driver, "Custom")
-            alldrivers.append(newDriver)        
-            
-    #print ("calling start server internal function")
+            alldrivers.append(newDriver)
+
+    # print ("calling start server internal function")
     if alldrivers:
         startServer(port, alldrivers)
-    
+
+
 # Stop INDI Server
 @app.post('/api/server/stop')
 def stop_server():
@@ -141,11 +161,15 @@ def stop_server():
         if not saved_profile:
             saved_profile = "Simulators"
 
+
 ''' Driver Operations '''
+
+
 # Get all drivers
 def get_drivers():
     drivers = [ob.__dict__ for ob in driversList]
     return drivers
+
 
 # Get all drivers families (groups)
 def get_driver_families():
@@ -154,6 +178,8 @@ def get_driver_families():
     return families
 
 ''' JSON REQUESTS '''
+
+
 # Get all driver families (JSON)
 @app.get('/api/drivers/groups')
 def get_json_groups():
@@ -164,6 +190,7 @@ def get_json_groups():
     response.content_type = 'application/json'
     return json_string
 
+
 # Get all drivers (JSON)
 @app.get('/api/drivers')
 def get_json_drivers():
@@ -172,30 +199,34 @@ def get_json_drivers():
     response.content_type = 'application/json'
     return json_string
 
-# Get one profile info 
+
+# Get one profile info
 @app.get('/api/profiles/<item>')
 def get_json_profile(item):
     results = db.get_profile(item)
     json_string = json.dumps(results)
     return json_string
 
+
 # Get all profiles (JSON)
 @app.get('/api/profiles')
-def get_json_profiles():    
+def get_json_profiles():
     results = db.get_profiles()
     json_string = json.dumps(results)
-    return json_string 
+    return json_string
+
 
 # Get driver labels of specific profile
 @app.get('/api/profiles/<item>/labels')
-def get_json_profile_labels(item):    
+def get_json_profile_labels(item):
     results = db.get_profile_drivers_labels(item)
     json_string = json.dumps(results)
     return json_string
 
+
 # Get custom drivers of specific profile
 @app.get('/api/profiles/<item>/custom')
-def get_custom_drivers(item):    
+def get_custom_drivers(item):
     results = db.get_profile_custom_drivers(item)
     json_string = json.dumps(results)
     if (json_string == "null"):
@@ -203,5 +234,5 @@ def get_custom_drivers(item):
     else:
         return json_string
 
-#run(app, host='0.0.0.0', port=8080, debug=True, reloader=True)
+# run(app, host='0.0.0.0', port=8080, debug=True, reloader=True)
 run(app, host='0.0.0.0', port=8624, debug=True)
