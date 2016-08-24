@@ -9,10 +9,11 @@
   <!-- Set the page to the width of the device and set the zoon level -->
   <meta name="viewport" content="width = device-width, initial-scale = 1">
   <title>INDI Web Manager</title>
-  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/jquery-ui.min.css">
   <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-select.min.css">
   <link rel="stylesheet" type="text/css" href="/static/css/schoolhouse.css">
-  
+
 </head>
 <body>
 
@@ -22,8 +23,8 @@
     <!-- <form> !-->
 
       <div id="firstrow" class="row">
-       <div class="col-sm-6">            
-        <div class="form-group">           
+       <div class="col-sm-6">
+        <div class="form-group">
          <label>Equipment Profile:</label>
          <div class="input-group">
            <select onClick="loadCurrentProfileDrivers()" id="profiles" class="form-control">
@@ -34,18 +35,18 @@
         <option>{{profile['name']}}</option>
     %end
 %end
-           </select>              
+           </select>
            <span class="input-group-btn">
              <button class="btn btn-default" onCLick="saveProfile()" data-toggle="tooltip" title="Save Profile"><span class="glyphicon glyphicon-save" aria-hidden="true"></span></button>
-             <button class="btn btn-default" onClick="removeProfile()" data-toggle="tooltip" title="Delete Profile"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button>             
+             <button class="btn btn-default" onClick="removeProfile()" data-toggle="tooltip" title="Delete Profile"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button>
            </span>
 		</div>
-		<div class="checkbox"><label><input id="profile_auto" onChange="saveProfileInfo()" type="checkbox" value="Autostart">Auto Start</label></div>    	
+		<div class="checkbox"><label><input id="profile_auto" onChange="saveProfileInfo()" type="checkbox" value="Autostart">Auto Start</label></div>
        </div>
      </div>
 
      <div class="col-sm-6">
-       <div class="form-group">             
+       <div class="form-group">
          <label>New Profile:</label>
          <div class="input-group">
           <input class="form-control" id="new_profile_name" type="text" placeholder="New Profile">
@@ -54,8 +55,8 @@
           </span>
          </div>
      </div>
-   </div> 
-   </div>          
+   </div>
+   </div>
 
    <div class="row">
      <div class="col-sm-6">
@@ -72,23 +73,23 @@
        </select>
        </div>
      </div>
-      
+
         <div class="col-sm-6">
             <div class="form-group">
             <label for="serverPort" class="control-label">Port:</label>
             <input id="profile_port" onChange="saveProfileInfo()" class="form-control" type="text" value="7624">
-            </div>                        
-        </div>    
-    
+            </div>
+        </div>
+
    </div>
-      
+
     <div class="row">
         <div class="col-sm-6">
             <div class="form-group">
                 <label for="customDrivers" class="control-label">Custom Drivers:</label>
                 <input class="form-control" id="custom_drivers" type="text" placeholder="driver1@remotehost,driver2@remotehost">
             </div>
-        
+
             <button id="server_command" onClick="toggleServer()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> Start</button>
             <div id="notify_message"></div>
         </div>
@@ -99,14 +100,14 @@
             </div>
         </div>
     </div>
-    
-      
+
+
     <div class="row">
         <div class="col-sm-6">
-            
+
         </div>
     </div>
-    
+
    </div>
 </div>
 
