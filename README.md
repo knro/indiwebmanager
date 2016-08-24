@@ -9,7 +9,7 @@ INDI Web Manager is a simple Web Application to manage [INDI](http://www.indilib
 INDI Library must be installed on the target system. The Web Application is based on [Bottle Py](http://bottlepy.org) micro-framework. It has a built-in webserver and by default listens on port 8624. Install the pre-requisites:
 
 ```
-$ sudo apt-get install python-dev python-psutil
+$ sudo pip install -r requirements.txt
 ```
 
 Copy the **servermanager** folder to $(HOME) or any folder where the user has read and write access.
@@ -89,24 +89,24 @@ INDI Web Manager provides a RESTful API to control all aspects of the applicatio
 ### Get Server Status
 
  URL | Method | Return | Format
---- | --- | --- | --- 
+--- | --- | --- | ---
 /api/server/status | GET | INDI server status (running or not) | {'server': bool}
 
 **Example:** curl http://localhost:8624/api/server/status
 **Reply:** [{"status": "False"}]
 
 ### Start Server
- 
+
  TODO
 
 ### Stop Server
 URL | Method | Return | Format
---- | --- | --- | --- 
+--- | --- | --- | ---
 /api/server/stop | POST | None | []
 
 ### Get running drivers list
 URL | Method | Return | Format
---- | --- | --- | --- 
+--- | --- | --- | ---
 /api/server/drivers | GET | Returns an array for all the locally running drivers | {'driver': driver_executable}
 
 **Example:** curl http://localhost:8624/api/server/drivers
@@ -116,7 +116,7 @@ URL | Method | Return | Format
 
 ### Add new profile
 URL | Method | Return | Format
---- | --- | --- | --- 
+--- | --- | --- | ---
 /api/profiles/<name> | POST | None | None
 
 To add a profile named **foo**:
@@ -127,7 +127,7 @@ curl -H "Content-Type: application/json" -X POST http://localhost:8624/api/profi
 
 ### Delete profile
 URL | Method | Return | Format
---- | --- | --- | --- 
+--- | --- | --- | ---
 /api/profiles/<name> | DELETE | None | None
 
 To delete a profile named **foo**:
