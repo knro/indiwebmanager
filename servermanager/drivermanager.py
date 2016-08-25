@@ -2,7 +2,7 @@
 
 from bottle import Bottle, run, template, static_file, request
 from servermanager import startServer, stopServer, isServerRunning, getRunningDrivers
-from parsedrivers import driversList, findDriverByLabel
+from parsedrivers import driversList, findDriverByLabel, DeviceDriver
 import db
 import json
 import os
