@@ -1,0 +1,3 @@
+include AUTHORS LICENSE README.md
+include *.service
+recursive-include indiweb/views *
