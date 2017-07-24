@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import os
+import logging
 from subprocess import call, check_output
 import psutil
 
@@ -12,25 +14,28 @@ class IndiServer(object):
         self.__fifo = fifo
 
     def __clear_fifo(self):
+        logging.info("Deleting fifo %s" % self.__fifo)
         call(['rm', '-f', self.__fifo])
         call(['mkfifo', self.__fifo])
 
     def __run(self, port):
         cmd = 'indiserver -p %d -m 100 -v -f %s > /dev/null 2>&1 &' % \
             (port, self.__fifo)
+        logging.debug(cmd)
         call(cmd, shell=True)
 
     def start_driver(self, driver):
         # escape quotes if they exist
         binary = driver.binary.replace('"', '\\"')
-        cmd = 'start %s -n "%s"\n' % (binary, driver.label)
 
         if "@" in binary:
-            cmd = 'start %s\n' % binary
+            cmd = 'start %s' % binary
+        else:
+            cmd = 'start %s -n \\"%s\\"' % (binary, driver.label)
 
-        with open(self.__fifo, 'w') as fifo:
-            fifo.write(cmd)
-            fifo.flush()
+        full_cmd = 'echo "%s" > %s' % (cmd, self.__fifo)
+        logging.debug(full_cmd)
+        call(full_cmd, shell=True)
 
     def start(self, port=INDI_PORT, drivers=[]):
         self.__clear_fifo()
@@ -41,6 +46,7 @@ class IndiServer(object):
 
     def stop(self):
         cmd = ['pkill', 'indiserver']
+        logging.debug(' '.join(cmd))
         call(cmd)
 
     def is_running(self):

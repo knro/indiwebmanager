@@ -2,6 +2,7 @@
 
 import os
 import json
+import logging
 import argparse
 from bottle import Bottle, run, template, static_file, request, response
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO
@@ -21,7 +22,7 @@ parser = argparse.ArgumentParser(
     description='Indi web manager. '
     'A simple web application to manage INDI server')
 
-parser.add_argument('--indiport', type=int, default=INDI_PORT,
+parser.add_argument('--indi-port', type=int, default=INDI_PORT,
                     help='indiserver port (default: %d)' % INDI_PORT)
 parser.add_argument('--port', type=int, default=PORT,
                     help='Web server port (default: %d)' % PORT)
@@ -39,10 +40,12 @@ parser.add_argument('--verbose', '-v', action='store_true',
 args = parser.parse_args()
 
 
+logging_level = logging.DEBUG if args.verbose else logging.INFO
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging_level)
+
 saved_profile = None
 collection = DriverCollection(args.xmldir)
 indi_server = IndiServer(args.fifo)
-print args.db
 db = Database(args.db)
 app = Bottle()
 
@@ -109,7 +112,9 @@ def update_profile(name):
     response.set_cookie("indiserver_profile", name,
                         None, max_age=3600000, path='/')
     data = request.json
-    db.update_profile(name, data)
+    port = data.get('port', args.indi_port)
+    autostart = bool(data.get('autostart', 0))
+    db.update_profile(name, port, autostart)
 
 
 @app.post('/api/profiles/<name>/drivers')

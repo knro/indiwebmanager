@@ -4,9 +4,7 @@ After=multi-user.target
 
 [Service]
 Type=idle
-User=pi
-ExecStart=/usr/bin/python /home/pi/servermanager/drivermanager.py
-ExecStartPost=/usr/bin/python /home/pi/servermanager/autostart.py
+ExecStart=/usr/bin/indi-web
 Restart=always
 RestartSec=5
 

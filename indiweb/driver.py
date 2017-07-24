@@ -39,7 +39,6 @@ class DriverCollection:
             root = tree.getroot()
 
             for group in root:
-                # print " ---> " + group.attrib['group']
                 family = group.attrib['group']
 
                 for device in group:
