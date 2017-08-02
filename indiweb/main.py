@@ -56,6 +56,23 @@ app = Bottle()
 saved_profile = None
 
 
+def start_profile(profile):
+    info = db.get_profile(profile)
+
+    profile_drivers = db.get_profile_drivers_labels(profile)
+    all_drivers = [collection.by_label(d['label']) for d in profile_drivers]
+
+    # Find if we have any custom drivers
+    custom_drivers = db.get_profile_custom_drivers(profile)
+    if custom_drivers:
+        drivers = custom_drivers['drivers'].split(',')
+        for drv in drivers:
+            all_drivers.append(DeviceDriver(drv, drv, "1.0", drv, "Custom"))
+
+    if all_drivers:
+        indi_server.start(info['port'], all_drivers)
+
+
 @app.route('/static/<path:path>')
 def callback(path):
     """Serve static files"""
@@ -172,31 +189,7 @@ def start_server(profile):
     saved_profile = profile
     response.set_cookie("indiserver_profile", profile,
                         None, max_age=3600000, path='/')
-    info = db.get_profile(profile)
-    port = info['port']
-
-    profile_drivers = db.get_profile_drivers_labels(profile)
-    all_drivers = [collection.by_label(d['label']) for d in profile_drivers]
-
-    # Find if we have any custom drivers
-    custom_drivers = db.get_profile_custom_drivers(profile)
-    if custom_drivers:
-        drivers = custom_drivers['drivers'].split(',')
-        for drv in drivers:
-            all_drivers.append(DeviceDriver(drv, drv, "1.0", drv, "Custom"))
-
-    if all_drivers:
-        indi_server.start(port, all_drivers)
-
-
-@app.post('/api/server/autostart')
-def autostart_server():
-    """Start autostart profile if any"""
-    profiles = db.get_profiles()
-    for profile in profiles:
-        if profile['autostart']:
-            start_server(profile['name'])
-            break
+    start_profile(profile)
 
 
 @app.post('/api/server/stop')
@@ -230,6 +223,12 @@ def get_json_drivers():
 
 
 def main():
+    """Start autostart profile if any"""
+    for profile in db.get_profiles():
+        if profile['autostart']:
+            start_profile(profile['name'])
+            break
+
     run(app, host=args.host, port=args.port, quiet=not args.verbose)
     logging.info("Exiting")
 
