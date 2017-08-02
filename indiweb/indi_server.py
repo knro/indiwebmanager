@@ -7,11 +7,16 @@ import psutil
 
 INDI_PORT = 7624
 INDI_FIFO = '/tmp/indiFIFO'
+INDI_CONFIG_DIR = os.path.join(os.environ['HOME'], '.indi')
 
 
 class IndiServer(object):
-    def __init__(self, fifo=INDI_FIFO):
+    def __init__(self, fifo=INDI_FIFO, conf_dir=INDI_CONFIG_DIR):
         self.__fifo = fifo
+        self.__conf_dir = conf_dir
+
+        # stop running indiserver, if any
+        self.stop()
 
     def __clear_fifo(self):
         logging.info("Deleting fifo %s" % self.__fifo)
@@ -27,17 +32,19 @@ class IndiServer(object):
     def start_driver(self, driver):
         # escape quotes if they exist
         binary = driver.binary.replace('"', '\\"')
+        cmd = 'start %s -c \\"%s\\"' % (binary, self.__conf_dir)
 
-        if "@" in binary:
-            cmd = 'start %s' % binary
-        else:
-            cmd = 'start %s -n \\"%s\\"' % (binary, driver.label)
+        if not "@" in binary:
+            cmd += ' -n \\"%s\\"' % driver.label
 
         full_cmd = 'echo "%s" > %s' % (cmd, self.__fifo)
         logging.debug(full_cmd)
         call(full_cmd, shell=True)
 
     def start(self, port=INDI_PORT, drivers=[]):
+        if self.is_running():
+            self.stop()
+
         self.__clear_fifo()
         self.__run(port)
 
