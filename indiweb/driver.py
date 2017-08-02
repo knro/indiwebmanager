@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-import xml.etree.ElementTree as ET
 import os
+import xml.etree.ElementTree as ET
 
 # Default INDI data directory
 INDI_DATA_DIR = "/usr/share/indi/"
@@ -10,9 +10,10 @@ INDI_DATA_DIR = "/usr/share/indi/"
 class DeviceDriver:
     """Device driver container"""
 
-    def __init__(self, name, label, version, binary, family):
+    def __init__(self, name, label, version, binary, family, skel=None):
         self.name = name
         self.label = label
+        self.skeleton = skel
         self.version = version
         self.binary = binary
         self.family = family
@@ -43,12 +44,15 @@ class DriverCollection:
 
                 for device in group:
                     label = device.attrib["label"]
+                    skel = device.attrib.get("skel", None)
                     drv = device[0]
                     name = drv.attrib["name"]
                     binary = drv.text
                     version = device[1].text
 
-                    driver = DeviceDriver(name, label, version, binary, family)
+                    skel_file = os.path.join(self.path, skel) if skel else None
+                    driver = DeviceDriver(name, label, version,
+                                          binary, family, skel_file)
                     self.drivers.append(driver)
 
         # Sort all drivers by label

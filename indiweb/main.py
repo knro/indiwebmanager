@@ -15,7 +15,6 @@ WEB_PORT = 8624
 
 pkg_path, _ = os.path.split(os.path.abspath(__file__))
 views_path = os.path.join(pkg_path, 'views')
-db_path = os.path.join(INDI_CONFIG_DIR, 'profiles.db')
 
 
 parser = argparse.ArgumentParser(
@@ -33,31 +32,28 @@ parser.add_argument('--fifo', '-f', default=INDI_FIFO,
                     help='indiserver FIFO path (default: %s)' % INDI_FIFO)
 parser.add_argument('--conf', '-c', default=INDI_CONFIG_DIR,
                     help='INDI config. directory (default: %s)' % INDI_CONFIG_DIR)
-parser.add_argument('--db', '-D', default=db_path,
-                    help='Profiles DB path (default: %s)' % db_path)
 parser.add_argument('--xmldir', '-x', default=INDI_DATA_DIR,
                     help='INDI XML directory (default: %s)' % INDI_DATA_DIR)
 parser.add_argument('--verbose', '-v', action='store_true',
                     help='Print more messages')
-parser.add_argument('--debug', '-d', action='store_true',
-                    help='Print debug messages')
 args = parser.parse_args()
 
 
 logging_level = logging.WARNING
 
 if args.verbose:
-    logging_level = logging.INFO
-elif args.debug:
     logging_level = logging.DEBUG
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging_level)
 
-saved_profile = None
 collection = DriverCollection(args.xmldir)
 indi_server = IndiServer(args.fifo, args.conf)
-db = Database(args.db)
+
+db_path = os.path.join(args.conf, 'profiles.db')
+db = Database(db_path)
 app = Bottle()
+
+saved_profile = None
 
 
 @app.route('/static/<path:path>')
@@ -234,7 +230,7 @@ def get_json_drivers():
 
 
 def main():
-    run(app, host=args.host, port=args.port, quiet=not args.debug)
+    run(app, host=args.host, port=args.port, quiet=not args.verbose)
     logging.info("Exiting")
 
 

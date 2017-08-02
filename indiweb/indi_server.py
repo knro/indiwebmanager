@@ -26,19 +26,23 @@ class IndiServer(object):
     def __run(self, port):
         cmd = 'indiserver -p %d -m 100 -v -f %s > /dev/null 2>&1 &' % \
             (port, self.__fifo)
-        logging.debug(cmd)
+        logging.info(cmd)
         call(cmd, shell=True)
 
     def start_driver(self, driver):
         # escape quotes if they exist
-        binary = driver.binary.replace('"', '\\"')
-        cmd = 'start %s -c \\"%s\\"' % (binary, self.__conf_dir)
+        conf = os.path.join(self.__conf_dir, driver.label + '_config.xml')
+        cmd = 'start %s -c "%s"' % (driver.binary, conf)
 
-        if not "@" in binary:
-            cmd += ' -n \\"%s\\"' % driver.label
+        if not "@" in driver.binary:
+            cmd += ' -n "%s"' % driver.label
 
+        if driver.skeleton:
+            cmd += ' -s "%s"' % driver.skeleton
+
+        cmd = cmd.replace('"', '\\"')
         full_cmd = 'echo "%s" > %s' % (cmd, self.__fifo)
-        logging.debug(full_cmd)
+        logging.info(full_cmd)
         call(full_cmd, shell=True)
 
     def start(self, port=INDI_PORT, drivers=[]):
@@ -53,7 +57,7 @@ class IndiServer(object):
 
     def stop(self):
         cmd = ['pkill', 'indiserver']
-        logging.debug(' '.join(cmd))
+        logging.info(' '.join(cmd))
         call(cmd)
 
     def is_running(self):

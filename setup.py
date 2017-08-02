@@ -11,7 +11,7 @@ INDI Web Manager is a simple web application to manage
 
 setup(
     name='indiweb',
-    version='1.0.0',
+    version='0.1.0',
     description='A simple web application to manage INDI server',
     long_description=LONG_DESCRIPTION,
     author='Jasem Mutlaq',

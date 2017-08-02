@@ -4,7 +4,8 @@ After=multi-user.target
 
 [Service]
 Type=idle
-ExecStart=/usr/bin/indi-web
+ExecStartPre=/bin/mkdir -p /usr/share/indi/config
+ExecStart=/usr/bin/indi-web -v -c /usr/share/indi/config
 Restart=always
 RestartSec=5
 

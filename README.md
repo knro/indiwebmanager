@@ -1,60 +1,58 @@
 # INDI Web Manager
 
-INDI Web Manager is a simple Web Application to manage [INDI](http://www.indilib.org) server. It supports multiple driver profiles along with optional custom remote drivers. It can be used to start INDI server locally, and also to connect or **chain** to remote INDI servers.
+INDI Web Manager is a simple Web Application to manage
+[INDI](http://www.indilib.org) server. It supports multiple driver profiles
+along with optional custom remote drivers. It can be used to start INDI server
+locally, and also to connect or **chain** to remote INDI servers.
 
 ![INDI Web Manager](http://indilib.org/images/indi/indiwebmanager.png)
 
+The Web Application is based on [Bottle Py](http://bottlepy.org)
+micro-framework. It has a built-in webserver and by default listens on port
+8624.
+
 # Installation
 
-INDI Library must be installed on the target system. The Web Application is based on [Bottle Py](http://bottlepy.org) micro-framework. It has a built-in webserver and by default listens on port 8624. Install the pre-requisites:
+You can install INDI Web Manager system-wide using pip:
 
 ```
-$ sudo apt-get -y install python-requests python-psutil python-bottle
+$ sudo pip install https://github.com/juanmb/indiwebmanager/archive/master.zip
 ```
 
-Copy the **servermanager** folder to your home directory $(HOME) or any folder where the user has read and write access.
+The INDI library must be installed on the target system.
 
 # Usage
 
-The INDI Web Manager can run as a standalone server. It can be started manually by invoking python:
+You can obtain help about the **indi-web** command by invoking:
 
 ```
-$ cd servermanager
-$ python drivermanager.py
+$ indi-web -h
 ```
 
-Then using your favorite web browser, go to http://localhost:8624 if the INDI Web Manager is running locally. If the INDI Web Manager is installed on a remote system, simply replace localhost with the hostname or IP address of the remote system.
-
-# Auto Start
-
-To enable the INDI Web Manager to automatically start after a system reboot, a systemd service file is provided for your convenience:
+The INDI Web Manager can run as a standalone server. It can be started manually
+by invoking:
 
 ```
-[Unit]
-Description=INDI Web Manager
-After=multi-user.target
-
-[Service]
-Type=idle
-User=pi
-ExecStart=/usr/bin/python /home/pi/servermanager/drivermanager.py
-ExecStartPost=/usr/bin/python /home/pi/servermanager/autostart.py
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
+$ indi-web -v
 ```
 
-The above service files assumes you copied the servermanager directory to /home/pi, so change it to whereever you installed the directory on your target system. The user is also specified as **pi** and must be changed to your username.
+Then using your favorite web browser, go to [](http://localhost:8624) if the
+INDI Web Manager is running locally. If the INDI Web Manager is installed on a
+remote system, simply replace localhost with the hostname or IP address of the
+remote system.
 
-If you selected any profile as **Auto Start** then the INDI server shall be automatically started when the service is executed on start up.
+# Auto start
 
-Copy the indiwebmanager.service file to **/lib/systemd/system**:
+If you selected any profile as **Auto Start** then the INDI server shall be
+automatically started when the service is executed on start up.
+
+# Systemd configuration
+
+Copy the indiwebmanager.service file to `/etc/systemd/system`
 
 ```
-sudo cp indiwebmanager.service /lib/systemd/system/
-sudo chmod 644 /lib/systemd/system/indiwebmanager.service
+sudo cp indiwebmanager.service /etc/systemd/system/
+sudo chmod 644 /etc/systemd/system/indiwebmanager.service
 ```
 
 Now configure systemd to load the service file during boot:
@@ -80,11 +78,19 @@ If all appears OK, you can start using the Web Application using any browser.
 
 # Profiles
 
-The Web Application provides a default profile to run simulator drivers. To use a new profile, add the profile name and then click  the plus button. Next, select which drivers to run under this particular profile. After selecting the drivers, click the **Save** icon to save all your changes. To enable automatic startup of INDI server for a particular profile when the device boots up or when invoked manually via the **systemctl** command, check the **Auto Start** checkbox.
+The Web Application provides a default profile to run simulator drivers. To use
+a new profile, add the profile name and then click  the plus button. Next,
+select which drivers to run under this particular profile. After selecting the
+drivers, click the **Save** icon to save all your changes. To enable automatic
+startup of INDI server for a particular profile when the device boots up or
+when invoked manually via the **systemctl** command, check the **Auto Start**
+checkbox.
 
 # API
 
-INDI Web Manager provides a RESTful API to control all aspects of the application. Data communication is via JSON messages. All URLs are appended to the hostname:port running the INDI Web Manager.
+INDI Web Manager provides a RESTful API to control all aspects of the
+application. Data communication is via JSON messages. All URLs are appended to
+the hostname:port running the INDI Web Manager.
 
 ## INDI Server Methods
 
@@ -144,6 +150,7 @@ TODO
 
 ### TODO
 
-# Author
+# Authors
 
 Jasem Mutlaq (mutlaqja@ikarustech.com)
+Juan Menendez (juanmb@gmail.com)
