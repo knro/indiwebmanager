@@ -33,7 +33,7 @@ class DriverCollection:
         for fname in os.listdir(self.path):
             # Skip Skeleton files
             if fname.endswith(".xml") and "_sk" not in fname:
-                self.files.append(self.path + fname)
+                self.files.append(os.path.join(self.path, fname))
 
         for fname in self.files:
             tree = ET.parse(fname)

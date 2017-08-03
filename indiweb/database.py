@@ -1,5 +1,6 @@
-import os
+import os, errno
 import sqlite3
+import logging
 
 
 def dict_factory(cursor, row):
@@ -11,6 +12,16 @@ def dict_factory(cursor, row):
 
 class Database(object):
     def __init__(self, filename):
+        # create the directory if it does not exist
+        db_dir = os.path.dirname(filename)
+        try:
+            os.makedirs(db_dir)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        else:
+            logging.info("Created directory %s" % db_dir)
+
         self.__conn = sqlite3.connect(filename)
         self.__conn.row_factory = dict_factory
 
