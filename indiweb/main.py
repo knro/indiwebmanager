@@ -6,7 +6,7 @@ import logging
 import argparse
 from bottle import Bottle, run, template, static_file, request, response
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
-from .driver import DriverCollection, INDI_DATA_DIR
+from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
 from .database import Database
 
 # default settings

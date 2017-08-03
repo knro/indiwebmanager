@@ -1,4 +1,5 @@
-import os, errno
+import os
+import errno
 import sqlite3
 import logging
 
