@@ -1,4 +1,4 @@
-servermanager/views/js/bootstrap.min.js
-servermanager/views/js/bootstrap-select.min.js
-servermanager/views/js/jquery.min.js
-servermanager/views/js/jquery-ui.min.js
+indiweb/views/js/bootstrap.min.js
+indiweb/views/js/bootstrap-select.min.js
+indiweb/views/js/jquery.min.js
+indiweb/views/js/jquery-ui.min.js
