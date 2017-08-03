@@ -28,7 +28,7 @@
          <label>Equipment Profile:</label>
          <div class="input-group">
            <select onClick="loadCurrentProfileDrivers()" id="profiles" class="form-control">
-%for profile in allProfiles:
+%for profile in profiles:
     %if saved_profile == profile['name']:
         <option selected>{{profile['name']}}</option>
     %else:
@@ -63,9 +63,9 @@
      <div class="form-group">
      <label for="drivers" class="control-label">Drivers:</label>
        <select id="drivers_list" class="form-control selectpicker show-tick" data-live-search="true" title="Select drivers..." data-selected-text-format="count > 5" multiple>
-%for family,drivers in sorted(allDrivers.items()):
+%for family,driver_list in sorted(drivers.items()):
        <optgroup label="{{family}}">
-      %for driver in drivers:
+      %for driver in driver_list:
         <option value="{{driver}}" data-tokens="{{driver}}">{{driver}}</option>
       %end
        </optgroup>
