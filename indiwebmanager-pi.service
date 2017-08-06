@@ -4,9 +4,8 @@ After=multi-user.target
 
 [Service]
 Type=idle
-Environment=HOME=/root
-ExecStartPre=/bin/mkdir -p /root/.indi
-ExecStart=/usr/local/bin/indi-web -v -c /root/.indi
+User=pi
+ExecStart=/usr/local/bin/indi-web -v
 Restart=always
 RestartSec=5
 

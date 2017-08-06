@@ -59,11 +59,17 @@ simply replace localhost with the hostname or IP address of the remote system.
 # Auto start
 
 If you selected any profile as **Auto Start** then the INDI server shall be
-automatically started when the service is executed on start up.
+automatically started when the service is executed at start up.
 
 # Systemd configuration
 
-Copy the indiwebmanager.service file to `/etc/systemd/system`
+The provided file `indiwebmanager.service` is an example *systemd service file*
+that can be used to run `indi-web` as root.
+
+`indiwebmanager-pi.service` is another example of service file. In this case
+`indi-web` will run as *pi* user.
+
+Copy your preferred service file to `/etc/systemd/system`:
 
 ```
 sudo cp indiwebmanager.service /etc/systemd/system/
