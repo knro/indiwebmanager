@@ -13,15 +13,30 @@ micro-framework. It has a built-in webserver and by default listens on port
 
 # Installation
 
-You can install INDI Web Manager system-wide using pip:
+Before installing the **indiweb** package, make sure the INDI library is
+installed on the target system.
+
+You can install the **indiweb** Python package using pip:
 
 ```
-$ sudo pip install https://github.com/juanmb/indiwebmanager/archive/master.zip
+$ pip install indiweb
 ```
 
-The INDI library must be installed on the target system.
+You may want to install it system-wide, only in your user account or even into
+a [virtual environment](https://virtualenv.pypa.io/en/stable/) (if you are a
+developer).
+
+If you want to install it system-wide, you will have to invoke pip with
+superuser rights:
+
+```
+$ sudo pip install indiweb
+```
 
 # Usage
+
+After installing the **indiweb** package, the command **indi-web** will be
+available in your sytem PATH.
 
 You can obtain help about the **indi-web** command by invoking:
 
@@ -29,26 +44,32 @@ You can obtain help about the **indi-web** command by invoking:
 $ indi-web -h
 ```
 
-The INDI Web Manager can run as a standalone server. It can be started manually
-by invoking:
+The INDI Web Manager runs as a standalone web server. It can be started
+manually by invoking:
 
 ```
 $ indi-web -v
 ```
 
-Then using your favorite web browser, go to [](http://localhost:8624) if the
-INDI Web Manager is running locally. If the INDI Web Manager is installed on a
-remote system, simply replace localhost with the hostname or IP address of the
-remote system.
+Then using your favorite web browser, go to
+[http://localhost:8624](http://localhost:8624) if the INDI Web Manager is
+running locally. If the INDI Web Manager is installed on a remote system,
+simply replace localhost with the hostname or IP address of the remote system.
 
 # Auto start
 
 If you selected any profile as **Auto Start** then the INDI server shall be
-automatically started when the service is executed on start up.
+automatically started when the service is executed at start up.
 
 # Systemd configuration
 
-Copy the indiwebmanager.service file to `/etc/systemd/system`
+The provided file `indiwebmanager.service` is an example *systemd service file*
+that can be used to run `indi-web` as root.
+
+`indiwebmanager-pi.service` is another example of service file. In this case
+`indi-web` will run as *pi* user.
+
+Copy your preferred service file to `/etc/systemd/system`:
 
 ```
 sudo cp indiwebmanager.service /etc/systemd/system/
