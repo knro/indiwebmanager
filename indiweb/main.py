@@ -54,6 +54,7 @@ db = Database(db_path)
 app = Bottle()
 
 saved_profile = None
+active_profile = ""
 
 
 def start_profile(profile):
@@ -169,7 +170,7 @@ def get_custom_drivers(item):
 @app.get('/api/server/status')
 def get_server_status():
     """Server status"""
-    status = [{'status': str(indi_server.is_running())}]
+    status = [{'status': str(indi_server.is_running()), 'active_profile': active_profile}]
     return json.dumps(status)
 
 
@@ -187,6 +188,8 @@ def start_server(profile):
     """Start INDI server for a specific profile"""
     global saved_profile
     saved_profile = profile
+    global active_profile
+    active_profile = profile
     response.set_cookie("indiserver_profile", profile,
                         None, max_age=3600000, path='/')
     start_profile(profile)
@@ -196,6 +199,9 @@ def start_server(profile):
 def stop_server():
     """Stop INDI Server"""
     indi_server.stop()
+
+    global active_profile
+    active_profile = ""
 
     # If there is saved_profile already let's try to reset it
     global saved_profile
@@ -224,9 +230,12 @@ def get_json_drivers():
 
 def main():
     """Start autostart profile if any"""
+    global active_profile
+
     for profile in db.get_profiles():
         if profile['autostart']:
             start_profile(profile['name'])
+            active_profile = profile['name']
             break
 
     run(app, host=args.host, port=args.port, quiet=not args.verbose)
