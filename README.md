@@ -119,10 +119,10 @@ the hostname:port running the INDI Web Manager.
 
  URL | Method | Return | Format
 --- | --- | --- | ---
-/api/server/status | GET | INDI server status (running or not) | {'server': bool}
+/api/server/status | GET | INDI server status (running or not) | {'server': bool, 'active_profile': profile_name}
 
 **Example:** curl http://localhost:8624/api/server/status
-**Reply:** [{"status": "False"}]
+**Reply:** [{"status": "False"}, {"active_profile": ""}]
 
 ### Start Server
 
@@ -167,7 +167,12 @@ curl -X DELETE http://localhost:8624/api/profiles/foo
 
 ### Get All Profiles
 
-TODO
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/profiles | GET | Returns all profiles | [{"port": number, "id": ID, "autostart": number, "name": profile_name}, ...]
+
+**Example:** curl http://localhost:8624/api/profiles
+**Reply:** [{"port": 7624, "id": 1, "autostart": 0, "name": "Simulators"}, {"port": 7624, "id": 2, "autostart": 0, "name": "EQ5"}]
 
 ### TODO
 
