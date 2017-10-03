@@ -64,10 +64,8 @@ automatically started when the service is executed at start up.
 # Systemd configuration
 
 The provided file `indiwebmanager.service` is an example *systemd service file*
-that can be used to run `indi-web` as root.
-
-`indiwebmanager-pi.service` is another example of service file. In this case
-`indi-web` will run as *pi* user.
+that can be used to run `indi-web` as *pi* user. If your username is different
+please edit the file and change the username first.
 
 Copy your preferred service file to `/etc/systemd/system`:
 
