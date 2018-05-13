@@ -23,7 +23,7 @@ class Database(object):
         else:
             logging.info("Created directory %s" % db_dir)
 
-        self.__conn = sqlite3.connect(filename)
+        self.__conn = sqlite3.connect(filename, check_same_thread=False)
         self.__conn.row_factory = dict_factory
 
         # create new tables if they doesn't exist

@@ -7,7 +7,10 @@ import psutil
 
 INDI_PORT = 7624
 INDI_FIFO = '/tmp/indiFIFO'
-INDI_CONFIG_DIR = os.path.join(os.environ['HOME'], '.indi')
+try:
+    INDI_CONFIG_DIR = os.path.join(os.environ['HOME'], '.indi')
+except KeyError as e:
+    INDI_CONFIG_DIR = '/tmp/indi'
 
 
 class IndiServer(object):
@@ -56,9 +59,13 @@ class IndiServer(object):
             self.start_driver(driver)
 
     def stop(self):
-        cmd = ['pkill', 'indiserver']
+        cmd = ['pkill', '-9', 'indiserver']
         logging.info(' '.join(cmd))
-        call(cmd)
+        ret = call(cmd)
+        if ret == 0:
+            logging.info('indiserver terminated successfully')
+        else:
+            logging.warn('terminating indiserver failed code ' + str(ret))
 
     def is_running(self):
         for proc in psutil.process_iter():
