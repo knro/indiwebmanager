@@ -254,7 +254,7 @@ def main():
             active_profile = profile['name']
             break
 
-    run(application, host=args.host, port=args.port, quiet=not args.verbose)
+    run(app, host=args.host, port=args.port, quiet=args.verbose)
     logging.info("Exiting")
 
 
