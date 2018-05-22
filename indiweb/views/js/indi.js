@@ -257,10 +257,14 @@ function getStatus() {
 function getActiveDrivers() {
     $.getJSON("/api/server/drivers", function(data) {
         $("#server_command").html("<span class='glyphicon glyphicon-cog' aria-hidden='true'></span> Stop");
-        var msg = "<p class='alert alert-info'>Server is Online.<ul>";
+        var msg = "<p class='alert alert-info'>Server is Online.<ul  class=\"list-unstyled\">";
         var counter = 0;
         $.each(data, function(i, field) {
-            msg += "<li>" + field.driver + "</li>";
+            msg += "<li>" + "<button class=\"btn btn-xs\" " +
+		"onCLick=\"restartDriver('" + field.driver + "')\" data-toggle=\"tooltip\" " +
+		"title=\"Restart Driver\">" +
+		"<span class=\"glyphicon glyphicon-repeat\" aria-hidden=\"true\"></span></button> " +
+		field.driver + "</li>";
             counter++;
         });
 
@@ -275,3 +279,19 @@ function getActiveDrivers() {
     });
 
 }
+
+
+function restartDriver(label) {
+    console.log("restarting " + label)
+        $.ajax({
+            type: 'POST',
+            url: "/api/drivers/restart/" + label,
+            success: function() {
+                getStatus();
+		$("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Restarting driver "' + label + '" succeeded.</div>')
+            },
+            error: function() {
+                alert('Restarting driver "' + label + '" failed!');
+            }
+        });
+ }
