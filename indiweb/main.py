@@ -194,10 +194,14 @@ def get_server_status():
 @app.get('/api/server/drivers')
 def get_server_drivers():
     """List server drivers"""
-    status = []
-    for driver in indi_server.get_running_drivers():
-        status.append({'driver': driver})
-    return json.dumps(status)
+    # status = []
+    # for driver in indi_server.get_running_drivers():
+    #     status.append({'driver': driver})
+    # return json.dumps(status)
+    labels = []
+    for label in sorted(indi_server.get_running_drivers().keys()):
+        labels.append({'driver': label})
+    return json.dumps(labels)
 
 
 @app.post('/api/server/start/<profile>')
