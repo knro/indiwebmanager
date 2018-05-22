@@ -244,6 +244,32 @@ def get_json_drivers():
     response.content_type = 'application/json'
     return json.dumps([ob.__dict__ for ob in collection.drivers])
 
+@app.post('/api/drivers/start/<label>')
+def start_driver(label):
+    """Start INDI driver"""
+    driver = collection.by_label(label)
+    indi_server.start_driver(driver)
+    logging.info('Driver "%s" started.' % label)
+
+@app.post('/api/drivers/stop/<label>')
+def stop_driver(label):
+    """Stop INDI driver"""
+    driver = collection.by_label(label)
+    indi_server.stop_driver(driver)
+    logging.info('Driver "%s" stopped.' % label)
+
+@app.post('/api/drivers/restart/<label>')
+def restart_driver(label):
+    """Restart INDI driver"""
+    driver = collection.by_label(label)
+    indi_server.stop_driver(driver)
+    indi_server.start_driver(driver)
+    logging.info('Driver "%s" restarted.' % label)
+
+
+###############################################################################
+# Startup standalone server
+###############################################################################
 
 def main():
     """Start autostart profile if any"""

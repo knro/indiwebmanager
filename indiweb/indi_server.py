@@ -48,6 +48,18 @@ class IndiServer(object):
         logging.info(full_cmd)
         call(full_cmd, shell=True)
 
+    def stop_driver(self, driver):
+        # escape quotes if they exist
+        cmd = 'stop %s"' % driver.binary
+
+        if "@" not in driver.binary:
+            cmd += ' -n "%s"' % driver.label
+
+        cmd = cmd.replace('"', '\\"')
+        full_cmd = 'echo "%s" > %s' % (cmd, self.__fifo)
+        logging.info(full_cmd)
+        call(full_cmd, shell=True)
+
     def start(self, port=INDI_PORT, drivers=[]):
         if self.is_running():
             self.stop()
