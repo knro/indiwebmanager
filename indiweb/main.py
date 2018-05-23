@@ -4,8 +4,7 @@ import os
 import json
 import logging
 import argparse
-import bottle
-from bottle import Bottle, run, template, static_file, request, response
+from bottle import Bottle, run, template, static_file, request, response, default_app
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
 from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
 from .database import Database
@@ -50,10 +49,12 @@ if args.verbose:
     logging_level = logging.DEBUG
 
 if args.logfile:
-    logging.basicConfig(filename=args.logfile, format='%(asctime)s - %(levelname)s: %(message)s', level=logging_level)
+    logging.basicConfig(filename=args.logfile,
+                        format='%(asctime)s - %(levelname)s: %(message)s',
+                        level=logging_level)
 else:
-    logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s', level=logging_level)
-    
+    logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s',
+                        level=logging_level)
 
 logging.debug("command line arguments: " + str(vars(args)))
 
@@ -67,6 +68,7 @@ if args.server == 'standalone':
     app = Bottle()
     logging.info('using Bottle as standalone server')
 else:
+    app = default_app()
     logging.info('using Apache web server')
 
 saved_profile = None
@@ -90,19 +92,19 @@ def start_profile(profile):
         indi_server.start(info['port'], all_drivers)
 
 
-@bottle.route('/static/<path:path>')
+@app.route('/static/<path:path>')
 def callback(path):
     """Serve static files"""
     return static_file(path, root=views_path)
 
 
-@bottle.route('/favicon.ico', method='GET')
+@app.route('/favicon.ico', method='GET')
 def get_favicon():
     """Serve favicon"""
     return static_file('favicon.ico', root=views_path)
 
 
-@bottle.route('/')
+@app.route('/')
 def main_form():
     """Main page"""
     global saved_profile
@@ -120,33 +122,33 @@ def main_form():
 # Profile endpoints
 ###############################################################################
 
-@bottle.get('/api/profiles')
+@app.get('/api/profiles')
 def get_json_profiles():
     """Get all profiles (JSON)"""
     results = db.get_profiles()
     return json.dumps(results)
 
 
-@bottle.get('/api/profiles/<item>')
+@app.get('/api/profiles/<item>')
 def get_json_profile(item):
     """Get one profile info"""
     results = db.get_profile(item)
     return json.dumps(results)
 
 
-@bottle.post('/api/profiles/<name>')
+@app.post('/api/profiles/<name>')
 def add_profile(name):
     """Add new profile"""
     db.add_profile(name)
 
 
-@bottle.delete('/api/profiles/<name>')
+@app.delete('/api/profiles/<name>')
 def delete_profile(name):
     """Delete Profile"""
     db.delete_profile(name)
 
 
-@bottle.put('/api/profiles/<name>')
+@app.put('/api/profiles/<name>')
 def update_profile(name):
     """Update profile info (port & autostart)"""
     response.set_cookie("indiserver_profile", name,
@@ -157,21 +159,21 @@ def update_profile(name):
     db.update_profile(name, port, autostart)
 
 
-@bottle.post('/api/profiles/<name>/drivers')
+@app.post('/api/profiles/<name>/drivers')
 def save_profile_drivers(name):
     """Add drivers to existing profile"""
     data = request.json
     db.save_profile_drivers(name, data)
 
 
-@bottle.get('/api/profiles/<item>/labels')
+@app.get('/api/profiles/<item>/labels')
 def get_json_profile_labels(item):
     """Get driver labels of specific profile"""
     results = db.get_profile_drivers_labels(item)
     return json.dumps(results)
 
 
-@bottle.get('/api/profiles/<item>/custom')
+@app.get('/api/profiles/<item>/custom')
 def get_custom_drivers(item):
     """Get custom drivers of specific profile"""
     results = db.get_profile_custom_drivers(item)
@@ -183,23 +185,27 @@ def get_custom_drivers(item):
 # Server endpoints
 ###############################################################################
 
-@bottle.get('/api/server/status')
+@app.get('/api/server/status')
 def get_server_status():
     """Server status"""
     status = [{'status': str(indi_server.is_running()), 'active_profile': active_profile}]
     return json.dumps(status)
 
 
-@bottle.get('/api/server/drivers')
+@app.get('/api/server/drivers')
 def get_server_drivers():
     """List server drivers"""
-    status = []
-    for driver in indi_server.get_running_drivers():
-        status.append({'driver': driver})
-    return json.dumps(status)
+    # status = []
+    # for driver in indi_server.get_running_drivers():
+    #     status.append({'driver': driver})
+    # return json.dumps(status)
+    labels = []
+    for label in sorted(indi_server.get_running_drivers().keys()):
+        labels.append({'driver': label})
+    return json.dumps(labels)
 
 
-@bottle.post('/api/server/start/<profile>')
+@app.post('/api/server/start/<profile>')
 def start_server(profile):
     """Start INDI server for a specific profile"""
     global saved_profile
@@ -211,7 +217,7 @@ def start_server(profile):
     start_profile(profile)
 
 
-@bottle.post('/api/server/stop')
+@app.post('/api/server/stop')
 def stop_server():
     """Stop INDI Server"""
     indi_server.stop()
@@ -229,7 +235,7 @@ def stop_server():
 # Driver endpoints
 ###############################################################################
 
-@bottle.get('/api/drivers/groups')
+@app.get('/api/drivers/groups')
 def get_json_groups():
     """Get all driver families (JSON)"""
     response.content_type = 'application/json'
@@ -237,12 +243,41 @@ def get_json_groups():
     return json.dumps(sorted(families.keys()))
 
 
-@bottle.get('/api/drivers')
+@app.get('/api/drivers')
 def get_json_drivers():
     """Get all drivers (JSON)"""
     response.content_type = 'application/json'
     return json.dumps([ob.__dict__ for ob in collection.drivers])
 
+
+@app.post('/api/drivers/start/<label>')
+def start_driver(label):
+    """Start INDI driver"""
+    driver = collection.by_label(label)
+    indi_server.start_driver(driver)
+    logging.info('Driver "%s" started.' % label)
+
+
+@app.post('/api/drivers/stop/<label>')
+def stop_driver(label):
+    """Stop INDI driver"""
+    driver = collection.by_label(label)
+    indi_server.stop_driver(driver)
+    logging.info('Driver "%s" stopped.' % label)
+
+
+@app.post('/api/drivers/restart/<label>')
+def restart_driver(label):
+    """Restart INDI driver"""
+    driver = collection.by_label(label)
+    indi_server.stop_driver(driver)
+    indi_server.start_driver(driver)
+    logging.info('Driver "%s" restarted.' % label)
+
+
+###############################################################################
+# Startup standalone server
+###############################################################################
 
 def main():
     """Start autostart profile if any"""
