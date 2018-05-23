@@ -4,7 +4,6 @@ import os
 import json
 import logging
 import argparse
-import bottle
 from bottle import Bottle, run, template, static_file, request, response, default_app
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
 from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
@@ -50,10 +49,12 @@ if args.verbose:
     logging_level = logging.DEBUG
 
 if args.logfile:
-    logging.basicConfig(filename=args.logfile, format='%(asctime)s - %(levelname)s: %(message)s', level=logging_level)
+    logging.basicConfig(filename=args.logfile,
+                        format='%(asctime)s - %(levelname)s: %(message)s',
+                        level=logging_level)
 else:
-    logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s', level=logging_level)
-    
+    logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s',
+                        level=logging_level)
 
 logging.debug("command line arguments: " + str(vars(args)))
 
@@ -248,6 +249,7 @@ def get_json_drivers():
     response.content_type = 'application/json'
     return json.dumps([ob.__dict__ for ob in collection.drivers])
 
+
 @app.post('/api/drivers/start/<label>')
 def start_driver(label):
     """Start INDI driver"""
@@ -255,12 +257,14 @@ def start_driver(label):
     indi_server.start_driver(driver)
     logging.info('Driver "%s" started.' % label)
 
+
 @app.post('/api/drivers/stop/<label>')
 def stop_driver(label):
     """Stop INDI driver"""
     driver = collection.by_label(label)
     indi_server.stop_driver(driver)
     logging.info('Driver "%s" stopped.' % label)
+
 
 @app.post('/api/drivers/restart/<label>')
 def restart_driver(label):

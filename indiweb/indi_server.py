@@ -49,7 +49,6 @@ class IndiServer(object):
         call(full_cmd, shell=True)
         self.__running_drivers[driver.label] = driver
 
-
     def stop_driver(self, driver):
         # escape quotes if they exist
         cmd = 'stop %s' % driver.binary

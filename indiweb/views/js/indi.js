@@ -282,13 +282,12 @@ function getActiveDrivers() {
 
 
 function restartDriver(label) {
-    console.log("restarting " + label)
         $.ajax({
             type: 'POST',
             url: "/api/drivers/restart/" + label,
             success: function() {
                 getStatus();
-		$("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Restarting driver "' + label + '" succeeded.</div>')
+		$("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Restarting driver "' + label + '" succeeded.</div>');
             },
             error: function() {
                 alert('Restarting driver "' + label + '" failed!');
