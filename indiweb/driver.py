@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import logging
 import xml.etree.ElementTree as ET
 
 # Default INDI data directory
@@ -36,24 +37,30 @@ class DriverCollection:
                 self.files.append(os.path.join(self.path, fname))
 
         for fname in self.files:
-            tree = ET.parse(fname)
-            root = tree.getroot()
+            try:
+                tree = ET.parse(fname)
+                root = tree.getroot()
 
-            for group in root:
-                family = group.attrib['group']
+                for group in root.findall('devGroup'):
+                    family = group.attrib['group']
 
-                for device in group:
-                    label = device.attrib["label"]
-                    skel = device.attrib.get("skel", None)
-                    drv = device[0]
-                    name = drv.attrib["name"]
-                    binary = drv.text
-                    version = device[1].text
+                    for device in group.findall('device'):
+                        label = device.attrib["label"]
+                        skel = device.attrib.get("skel", None)
+                        drv = device.find('driver')
+                        name = drv.attrib["name"]
+                        binary = drv.text
+                        version = device.findtext('version', '0.0')
 
-                    skel_file = os.path.join(self.path, skel) if skel else None
-                    driver = DeviceDriver(name, label, version,
-                                          binary, family, skel_file)
-                    self.drivers.append(driver)
+                        skel_file = os.path.join(self.path, skel) if skel else None
+                        driver = DeviceDriver(name, label, version,
+                                              binary, family, skel_file)
+                        self.drivers.append(driver)
+
+            except KeyError as e:
+                logging.error("Error in file %s: attribute %s not found" % (fname, e))
+            except ET.ParseError as e:
+                logging.error("Error in file %s: %s" % (fname, e))
 
         # Sort all drivers by label
         self.drivers.sort(key=lambda x: x.label)

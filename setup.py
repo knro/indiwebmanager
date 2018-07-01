@@ -10,11 +10,11 @@ INDI Web Manager is a simple web application to manage
 
 setup(
     name='indiweb',
-    version='0.1.2',
+    version='0.1.3',
     description='A simple web application to manage INDI server',
     long_description=LONG_DESCRIPTION,
-    author='Jasem Mutlaq',
-    author_email='mutlaqja@ikarustech.com',
+    author='Jasem Mutlaq, Juan Menendez',
+    author_email='mutlaqja@ikarustech.com, juanmb@gmail.com',
     url='http://www.indilib.org/',
     packages=['indiweb'],
     package_dir={'indiweb': 'indiweb'},
