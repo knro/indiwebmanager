@@ -3,6 +3,7 @@ import errno
 import sqlite3
 import logging
 
+VERSION = "0.1.5"
 
 def dict_factory(cursor, row):
     d = {}
@@ -32,6 +33,18 @@ class Database(object):
     def create(self, filename):
         c = self.__conn.cursor()
 
+        # Check if we have a version table. If not, then the scheme is too old and needs updating
+        try:
+            c.execute('SELECT version FROM Version')
+        except sqlite3.Error:
+            # We need to drop old table before this new schema starting with version 0.1.5
+            try:
+                c.execute('DROP TABLE custom')
+            except sqlite3.Error:
+                pass
+            c.execute('CREATE TABLE Version (version TEXT)')
+            c.execute('INSERT INTO Version (version) values(?)', (VERSION,))
+
         c.execute('CREATE TABLE IF NOT EXISTS '
                   'driver (id INTEGER PRIMARY KEY AUTOINCREMENT,'
                   'label TEXT, profile INTEGER)')
@@ -47,6 +60,8 @@ class Database(object):
                   'profile (id INTEGER PRIMARY KEY AUTOINCREMENT,'
                   'name TEXT UNIQUE, port INTEGER DEFAULT 7624, '
                   'autostart INTEGER DEFAULT 0)')
+        c.execute('UPDATE Version SET version=?', (VERSION,))
+
         self.__conn.commit()
 
         c.execute('SELECT id FROM profile')
@@ -115,7 +130,10 @@ class Database(object):
         """Add Profile"""
 
         c = self.__conn.cursor()
-        c.execute('INSERT INTO profile (name) VALUES(?)', (name,))
+        try:
+            c.execute('INSERT INTO profile (name) VALUES(?)', (name,))
+        except sqlite3.IntegrityError:
+            logging.warning("Profile name %s already exists.", name)
         return c.lastrowid
 
     def get_profile(self, name):
@@ -165,7 +183,11 @@ class Database(object):
         """Save custom profile driver"""
 
         c = self.__conn.cursor()
-        c.execute('INSERT INTO customdriver (label, name, family, exec, version) VALUES(?, ?, ?, ?, ?)',
-                          (driver['Label'], driver['Name'], driver['Family'], driver['Exec'], driver['Version']))
-        self.__conn.commit()
+        try:
+            c.execute('INSERT INTO custom (label, name, family, exec, version) VALUES(?, ?, ?, ?, ?)',
+                      (driver['Label'], driver['Name'], driver['Family'], driver['Exec'], driver['Version']))
+            self.__conn.commit()
+        # Ignore duplicates
+        except sqlite3.Error:
+            pass
         c.close()

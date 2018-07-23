@@ -261,10 +261,10 @@ function getActiveDrivers() {
         var counter = 0;
         $.each(data, function(i, field) {
             msg += "<li>" + "<button class=\"btn btn-xs\" " +
-		"onCLick=\"restartDriver('" + field.driver + "')\" data-toggle=\"tooltip\" " +
+		"onCLick=\"restartDriver('" + field.label + "')\" data-toggle=\"tooltip\" " +
 		"title=\"Restart Driver\">" +
 		"<span class=\"glyphicon glyphicon-repeat\" aria-hidden=\"true\"></span></button> " +
-		field.driver + "</li>";
+		field.label + "</li>";
             counter++;
         });
 
