@@ -166,6 +166,14 @@ def save_profile_drivers(name):
     db.save_profile_drivers(name, data)
 
 
+@app.post('/api/profiles/custom')
+def save_profile_custom_driver():
+    """Add custom driver to existing profile"""
+    data = request.json
+    db.save_profile_custom_driver(data)
+    DriverCollection.reload_custom_drivers()
+
+
 @app.get('/api/profiles/<item>/labels')
 def get_json_profile_labels(item):
     """Get driver labels of specific profile"""
@@ -173,10 +181,10 @@ def get_json_profile_labels(item):
     return json.dumps(results)
 
 
-@app.get('/api/profiles/<item>/custom')
-def get_custom_drivers(item):
-    """Get custom drivers of specific profile"""
-    results = db.get_profile_custom_drivers(item)
+@app.get('/api/profiles/<item>/remote')
+def get_remote_drivers(item):
+    """Get remote drivers of specific profile"""
+    results = db.get_profile_remote_drivers(item)
     js = json.dumps(results)
     return [] if js == 'null' else js
 

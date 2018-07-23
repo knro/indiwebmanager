@@ -3,6 +3,8 @@
 import os
 import logging
 import xml.etree.ElementTree as ET
+# Is this the right way to do this??
+from .main import db
 
 # Default INDI data directory
 INDI_DATA_DIR = "/usr/share/indi/"
@@ -11,13 +13,14 @@ INDI_DATA_DIR = "/usr/share/indi/"
 class DeviceDriver:
     """Device driver container"""
 
-    def __init__(self, name, label, version, binary, family, skel=None):
+    def __init__(self, name, label, version, binary, family, skel=None, custom=False):
         self.name = name
         self.label = label
         self.skeleton = skel
         self.version = version
         self.binary = binary
         self.family = family
+        self.custom = custom
         self.role = ""
 
 
@@ -29,6 +32,7 @@ class DriverCollection:
         self.drivers = []
         self.files = []
         self.parse_drivers()
+        self.parse_custom_drivers()
 
     def parse_drivers(self):
         for fname in os.listdir(self.path):
@@ -64,6 +68,18 @@ class DriverCollection:
 
         # Sort all drivers by label
         self.drivers.sort(key=lambda x: x.label)
+
+    def parse_custom_drivers(self):
+        for custom in db.get_custom_drivers():
+            driver = DeviceDriver(custom.name, custom.label, custom.version, custom.exec, custom.family, None, True)
+            self.drivers.append(driver)
+
+    def clear_custom_drivers(self):
+        self.drivers = list(filter(lambda driver: driver.custom is not True, self.drivers))
+
+    def reload_custom_drivers(self):
+        self.clear_custom_drivers()
+        self.parse_custom_drivers()
 
     def by_label(self, label):
         for driver in self.drivers:

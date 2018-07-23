@@ -35,8 +35,13 @@ class Database(object):
         c.execute('CREATE TABLE IF NOT EXISTS '
                   'driver (id INTEGER PRIMARY KEY AUTOINCREMENT,'
                   'label TEXT, profile INTEGER)')
+        # JM 2018-07-23: Adding custom drivers table
         c.execute('CREATE TABLE IF NOT EXISTS '
                   'custom (id INTEGER PRIMARY KEY AUTOINCREMENT,'
+                  'label TEXT UNIQUE, name TEXT, family TEXT, exec TEXT, version TEXT)')
+        # JM 2018-07-23: Renaming custom drivers to remote since this is what they really are.
+        c.execute('CREATE TABLE IF NOT EXISTS '
+                  'remote (id INTEGER PRIMARY KEY AUTOINCREMENT,'
                   'drivers TEXT, profile INTEGER)')
         c.execute('CREATE TABLE IF NOT EXISTS '
                   'profile (id INTEGER PRIMARY KEY AUTOINCREMENT,'
@@ -66,6 +71,12 @@ class Database(object):
         cursor = self.__conn.execute('SELECT * FROM profile')
         return cursor.fetchall()
 
+    def get_custom_drivers(self):
+        """Get all custom drivers from database"""
+
+        cursor = self.__conn.execute('SELECT * FROM custom')
+        return cursor.fetchall()
+
     def get_profile_drivers_labels(self, name):
         """Get all drivers labels for a specific profile from database"""
 
@@ -74,11 +85,19 @@ class Database(object):
             'WHERE profile=(SELECT id FROM profile WHERE name=?)', (name,))
         return cursor.fetchall()
 
+    def get_profile_remote_drivers(self, name):
+        """Get remote drivers list for a specific profile"""
+
+        cursor = self.__conn.execute(
+            'SELECT drivers FROM remote '
+            'WHERE profile=(SELECT id FROM profile WHERE name=?)', (name,))
+        return cursor.fetchone()
+
     def get_profile_custom_drivers(self, name):
         """Get custom drivers list for a specific profile"""
 
         cursor = self.__conn.execute(
-            'SELECT drivers FROM custom '
+            'SELECT drivers FROM remote '
             'WHERE profile=(SELECT id FROM profile WHERE name=?)', (name,))
         return cursor.fetchone()
 
@@ -130,14 +149,23 @@ class Database(object):
             pid = self.add_profile(name)
 
         c.execute('DELETE FROM driver WHERE profile=?', (pid,))
-        c.execute('DELETE FROM custom WHERE profile=?', (pid,))
+        c.execute('DELETE FROM remote WHERE profile=?', (pid,))
 
         for driver in drivers:
             if 'label' in driver:
                 c.execute('INSERT INTO driver (label, profile) VALUES(?, ?)',
                           (driver['label'], pid))
-            elif 'custom' in driver:
-                c.execute('INSERT INTO custom (drivers, profile) VALUES(?, ?)',
-                          (driver['custom'], pid))
+            elif 'remote' in driver:
+                c.execute('INSERT INTO remote (drivers, profile) VALUES(?, ?)',
+                          (driver['remote'], pid))
+        self.__conn.commit()
+        c.close()
+
+    def save_profile_custom_driver(self, driver):
+        """Save custom profile driver"""
+
+        c = self.__conn.cursor()
+        c.execute('INSERT INTO customdriver (label, name, family, exec, version) VALUES(?, ?, ?, ?, ?)',
+                          (driver['Label'], driver['Name'], driver['Family'], driver['Exec'], driver['Version']))
         self.__conn.commit()
         c.close()
