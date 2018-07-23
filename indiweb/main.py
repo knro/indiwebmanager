@@ -214,7 +214,10 @@ def get_server_drivers():
     # for label in sorted(indi_server.get_running_drivers().keys()):
     #     labels.append({'driver': label})
     # return json.dumps(labels)
-    drivers = [driver.__dict__ for driver in indi_server.get_running_drivers().values()]
+    drivers = []
+    if indi_server.is_running() is True:
+        for driver in indi_server.get_running_drivers().values():
+            drivers.append(driver.__dict__)
     return json.dumps(drivers)
 
 
