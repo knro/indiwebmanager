@@ -5,6 +5,7 @@ import logging
 
 VERSION = "0.1.5"
 
+
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
@@ -176,7 +177,8 @@ class Database(object):
 
         c = self.__conn.cursor()
         try:
-            c.execute('INSERT INTO custom (label, name, family, exec, version) VALUES(?, ?, ?, ?, ?)',
+            c.execute('INSERT INTO custom (label, name, family, exec, version)'
+                      ' VALUES(?, ?, ?, ?, ?)',
                       (driver['Label'], driver['Name'], driver['Family'], driver['Exec'], driver['Version']))
             self.__conn.commit()
         # Ignore duplicates
