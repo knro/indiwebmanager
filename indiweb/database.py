@@ -108,14 +108,6 @@ class Database(object):
             'WHERE profile=(SELECT id FROM profile WHERE name=?)', (name,))
         return cursor.fetchone()
 
-    def get_profile_custom_drivers(self, name):
-        """Get custom drivers list for a specific profile"""
-
-        cursor = self.__conn.execute(
-            'SELECT drivers FROM remote '
-            'WHERE profile=(SELECT id FROM profile WHERE name=?)', (name,))
-        return cursor.fetchone()
-
     def delete_profile(self, name):
         """Delete Profile"""
 

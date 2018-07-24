@@ -4,14 +4,22 @@ import os
 import json
 import logging
 import argparse
-from bottle import Bottle, run, template, static_file, request, response, default_app
-from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
-from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
-from .database import Database
+
+from bottle import Bottle, run, template, static_file, request, response, BaseRequest, default_app
+#from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
+#from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
+#from .database import Database
+
+from indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
+from driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
+from database import Database
 
 # default settings
 WEB_HOST = '0.0.0.0'
 WEB_PORT = 8624
+
+# Make it 10MB
+BaseRequest.MEMFILE_MAX = 50 * 1024 * 1024
 
 pkg_path, _ = os.path.split(os.path.abspath(__file__))
 views_path = os.path.join(pkg_path, 'views')
@@ -76,7 +84,6 @@ else:
 saved_profile = None
 active_profile = ""
 
-
 def start_profile(profile):
     info = db.get_profile(profile)
 
@@ -118,7 +125,6 @@ def main_form():
     profiles = db.get_profiles()
     return template(os.path.join(views_path, 'form.tpl'), profiles=profiles,
                     drivers=drivers, saved_profile=saved_profile)
-
 
 ###############################################################################
 # Profile endpoints
@@ -188,8 +194,9 @@ def get_json_profile_labels(item):
 def get_remote_drivers(item):
     """Get remote drivers of specific profile"""
     results = db.get_profile_remote_drivers(item)
-    js = json.dumps(results)
-    return [] if js == 'null' else js
+    if results is None:
+        results = {}
+    return json.dumps(results)
 
 
 ###############################################################################
@@ -309,5 +316,5 @@ def main():
     logging.info("Exiting")
 
 
-if __name__ == '__init__':
+if __name__ == '__main__':
     main()

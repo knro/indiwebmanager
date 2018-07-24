@@ -8,7 +8,7 @@
 
   <!-- Set the page to the width of the device and set the zoon level -->
   <meta name="viewport" content="width = device-width, initial-scale = 1">
-  <title>INDI Web Manager</title>
+  <title>StellarMate Web Manager</title>
   <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css">
   <link rel="stylesheet" type="text/css" href="/static/css/jquery-ui.min.css">
   <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-select.min.css">
@@ -19,7 +19,7 @@
 
   <div class="container">
 
-    <h2>INDI Web Manager</h2>
+    <h4>INDI Web Manager</h4>
     <!-- <form> !-->
 
       <div id="firstrow" class="row">
@@ -83,11 +83,11 @@
 
    </div>
 
-    <div class="row">
+     <div class="row">
         <div class="col-sm-6">
             <div class="form-group">
-                <label for="customDrivers" class="control-label">Custom Drivers:</label>
-                <input class="form-control" id="custom_drivers" type="text" placeholder="driver1@remotehost,driver2@remotehost">
+                <label for="remoteDrivers" class="control-label">Remote Drivers:</label>
+                <input class="form-control" id="remote_drivers" type="text" placeholder="driver1@remotehost,driver2@remotehost">
             </div>
 
             <button id="server_command" onClick="toggleServer()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> Start</button>
@@ -117,5 +117,6 @@
 <script src="/static/js/bootstrap-select.min.js"></script>
 <script src="/static/js/jquery-ui.min.js"></script>
 <script src="/static/js/indi.js"></script>
+<script src="/static/js/bootstrap-confirmation.min.js"></script>
 </body>
 </html>

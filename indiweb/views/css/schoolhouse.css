@@ -1,6 +1,6 @@
 /* bootstrap overrides */
 /* odd span centering helpers */
-@media (min-width:767px) { 
+@media (min-width:767px) {
   .row-fluid .offsetHalf {margin-left:8.5% !important;}
   .row-fluid .offsetHalf1 {margin-left:12.9% !important;}
   .row-fluid .offsetHalf2 {margin-left:21.6% !important;}
@@ -9,7 +9,7 @@
 }
 
 body {
-	padding-top:70px;
+	padding-top:5px;
   	font-family:'Open Sans',Arial,Helvetica,Sans-Serif;
   	background-color:#efeddf;
 }
@@ -108,17 +108,17 @@ blockquote {
 .nav-tabs>.active>a {
   border-color:#999;
 }
- 
+
 .nav-list>li>a, .nav-list, .nav-header {
 	text-shadow:0;
 }
-    
+
 .nav-list {
-	border:0;  
+	border:0;
 }
 
 .pagination li a, .pager li a {
-	border-radius:0;	
+	border-radius:0;
 }
 
 .navbar .nav .dropdown-toggle .caret {
@@ -131,7 +131,7 @@ blockquote {
 }
 
 .btn {
-  	
+
 	border-radius:0;
     background-color: #999;
     background-image: none;
@@ -160,12 +160,12 @@ blockquote {
     background-image: none;
   	font-weight:400;
 }
-  
+
 .navbar-inverse .brand, .navbar-inverse .nav>li>a{
 	color:#eeeeee;
     text-shadow:0;
 }
-  
+
 .alert {
 	border-radius:0;
 }
@@ -177,12 +177,12 @@ blockquote {
     -webkit-box-shadow:inset 0 0 0;
   	background-color:#dedccd;
 }
-  
+
 .label {
 	border-radius:0;
     font-weight:300;
 }
-    
+
 .badge {
 	border-radius:0;
     font-weight:300;
@@ -195,7 +195,7 @@ blockquote {
 .breadcrumb {
 	background-color:#fff;
 }
-      
+
 input[type=text], input[type=password],textarea, select, .search-query {
 	border-radius:0;
 }
@@ -217,18 +217,18 @@ input[type=text], input[type=password],textarea, select, .search-query {
 .cards-bordered .card {
   background-color:#fff;
 }
-  
+
 .cards-rounded > div {
   border-radius:3px;
 }
 .cards-rounded .card {
   border-radius:3px;
 }
-        
+
 .cards-borderless .card {
   border-width:0;
 }
-  
+
 .card {
   height:100%;
   padding:12px;
@@ -255,11 +255,11 @@ input[type=text], input[type=password],textarea, select, .search-query {
 
 ul.card {
  height:100%;
- width:auto; 
+ width:auto;
  border:1px solid #ddd;
 }
 
-@media (min-width: 767px) { 
+@media (min-width: 767px) {
   ul.card {
    width:auto;
    display:table;
@@ -268,11 +268,11 @@ ul.card {
 
 .card li {
  height:100%;
- width:100%; 
+ width:100%;
  list-style:none;
 }
 
-@media (min-width: 767px) { 
+@media (min-width: 767px) {
   .card li {
    display:table-row;
   }

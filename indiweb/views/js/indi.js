@@ -1,5 +1,8 @@
 // Startup function
-$(function() {
+$(function()
+{
+    $('[data-toggle="tooltip"]').tooltip();
+
     loadCurrentProfileDrivers();
     getStatus();
 
@@ -8,23 +11,25 @@ $(function() {
         saveProfileDrivers(name, true);
     });
 
-    $("#custom_drivers").change(function() {
+    $("#remote_drivers").change(function() {
         var name = $("#profiles option:selected").text();
         saveProfileDrivers(name, true);
     });
-
 });
 
 function saveProfile() {
     var options = profiles.options;
     var name = options[options.selectedIndex].value;
+    // Remove any extra spaces
+    name = name.trim();
+
     var url = "/api/profiles/" + name;
 
     //console.log(url)
 
     $.ajax({
         type: 'POST',
-        url: url,
+        url: encodeURI(url),
         success: function() {
             //console.log("add new a profile " + name);
             saveProfileDrivers(name);
@@ -57,7 +62,7 @@ function saveProfileInfo() {
 
     $.ajax({
         type: 'PUT',
-        url: url,
+        url: encodeURI(url),
         data: profileInfo,
         contentType: "application/json; charset=utf-8",
         success: function() {
@@ -69,7 +74,6 @@ function saveProfileInfo() {
     });
 }
 
-//function saveProfileDrivers(profile, silent=false)
 function saveProfileDrivers(profile, silent) {
 
     if (typeof(silent) === 'undefined') silent = false;
@@ -83,15 +87,14 @@ function saveProfileDrivers(profile, silent) {
         });
     });
 
-    // Check for custom drivers
-    var custom = $("#custom_drivers").val();
-    //console.log("custom drivers " + custom);
-    if (custom) {
+    // Check for remote drivers
+    var remote = $("#remote_drivers").val();
+    if (remote) {
         drivers.push({
-            "custom": custom
+            "remote": remote
         });
         console.log({
-            "custom": custom
+            "remote": remote
         });
     }
 
@@ -101,7 +104,7 @@ function saveProfileDrivers(profile, silent) {
 
     $.ajax({
         type: 'POST',
-        url: url,
+        url: encodeURI(url),
         data: drivers,
         contentType: "application/json; charset=utf-8",
         success: function() {
@@ -132,12 +135,14 @@ function loadCurrentProfileDrivers() {
         $("#drivers_list").selectpicker('refresh');
     });
 
-    url = "/api/profiles/" + name + "/custom";
+    url = encodeURI("/api/profiles/" + name + "/remote");
 
-    $.getJSON(url, function(drivers) {
-        if (drivers) {
-            drivers = drivers.drivers;
-            $("#custom_drivers").val(drivers);
+    $.getJSON(url, function(data) {
+        if (data && data.drivers !== undefined) {
+            $("#remote_drivers").val(data.drivers);
+        }
+        else {
+            $("#remote_drivers").val("");
         }
     });
 
@@ -147,7 +152,7 @@ function loadCurrentProfileDrivers() {
 
 function loadProfileData() {
     var name = $("#profiles option:selected").text();
-    var url = "/api/profiles/" + name;
+    var url = encodeURI("/api/profiles/" + name);
 
     $.getJSON(url, function(info) {
         if (info.autostart == 1)
@@ -194,7 +199,7 @@ function removeProfile() {
 
     $.ajax({
         type: 'DELETE',
-        url: url,
+        url: encodeURI(url),
         success: function() {
             //console.log("delete profile " + name);
             $("#profiles option:selected").remove();
@@ -218,7 +223,7 @@ function toggleServer() {
 
         $.ajax({
             type: 'POST',
-            url: url,
+            url: encodeURI(url),
             success: function() {
                 //console.log("INDI Server started!");
                 getStatus();
