@@ -68,8 +68,8 @@ class DriverCollection:
 
     def parse_custom_drivers(self, drivers):
         for custom in drivers:
-            driver = DeviceDriver(custom['name'], custom['label'], custom['version'], custom['exec'], custom['family'],
-                                  None, True)
+            driver = DeviceDriver(custom['name'], custom['label'], custom['version'], custom['exec'],
+                                  custom['family'], None, True)
             self.drivers.append(driver)
 
     def clear_custom_drivers(self):

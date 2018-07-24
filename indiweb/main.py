@@ -6,13 +6,9 @@ import logging
 import argparse
 
 from bottle import Bottle, run, template, static_file, request, response, BaseRequest, default_app
-#from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
-#from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
-#from .database import Database
-
-from indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
-from driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
-from database import Database
+from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
+from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
+from .database import Database
 
 # default settings
 WEB_HOST = '0.0.0.0'
@@ -84,6 +80,7 @@ else:
 saved_profile = None
 active_profile = ""
 
+
 def start_profile(profile):
     info = db.get_profile(profile)
 
@@ -129,6 +126,7 @@ def main_form():
 ###############################################################################
 # Profile endpoints
 ###############################################################################
+
 
 @app.get('/api/profiles')
 def get_json_profiles():
@@ -316,5 +314,5 @@ def main():
     logging.info("Exiting")
 
 
-if __name__ == '__main__':
+if __name__ == '__init__':
     main()
