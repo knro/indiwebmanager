@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from setuptools import setup
+from indiweb import __version__
 
 LONG_DESCRIPTION = """
 INDI Web Manager is a simple web application to manage
@@ -10,7 +11,7 @@ INDI Web Manager is a simple web application to manage
 
 setup(
     name='indiweb',
-    version='0.1.4',
+    version=__version__,
     description='A simple web application to manage INDI server',
     long_description=LONG_DESCRIPTION,
     author='Jasem Mutlaq, Juan Menendez',
