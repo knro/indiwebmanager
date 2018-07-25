@@ -3,6 +3,8 @@ import errno
 import sqlite3
 import logging
 
+VERSION = "0.1.5"
+
 
 def dict_factory(cursor, row):
     d = {}
@@ -32,16 +34,35 @@ class Database(object):
     def create(self, filename):
         c = self.__conn.cursor()
 
+        # Check if we have a version table. If not, then the scheme is too old and needs updating
+        try:
+            c.execute('SELECT version FROM Version')
+        except sqlite3.Error:
+            # We need to drop old table before this new schema starting with version 0.1.5
+            try:
+                c.execute('DROP TABLE custom')
+            except sqlite3.Error:
+                pass
+            c.execute('CREATE TABLE Version (version TEXT)')
+            c.execute('INSERT INTO Version (version) values(?)', (VERSION,))
+
         c.execute('CREATE TABLE IF NOT EXISTS '
                   'driver (id INTEGER PRIMARY KEY AUTOINCREMENT,'
                   'label TEXT, profile INTEGER)')
+        # JM 2018-07-23: Adding custom drivers table
         c.execute('CREATE TABLE IF NOT EXISTS '
                   'custom (id INTEGER PRIMARY KEY AUTOINCREMENT,'
+                  'label TEXT UNIQUE, name TEXT, family TEXT, exec TEXT, version TEXT)')
+        # JM 2018-07-23: Renaming custom drivers to remote since this is what they really are.
+        c.execute('CREATE TABLE IF NOT EXISTS '
+                  'remote (id INTEGER PRIMARY KEY AUTOINCREMENT,'
                   'drivers TEXT, profile INTEGER)')
         c.execute('CREATE TABLE IF NOT EXISTS '
                   'profile (id INTEGER PRIMARY KEY AUTOINCREMENT,'
                   'name TEXT UNIQUE, port INTEGER DEFAULT 7624, '
                   'autostart INTEGER DEFAULT 0)')
+        c.execute('UPDATE Version SET version=?', (VERSION,))
+
         self.__conn.commit()
 
         c.execute('SELECT id FROM profile')
@@ -66,6 +87,12 @@ class Database(object):
         cursor = self.__conn.execute('SELECT * FROM profile')
         return cursor.fetchall()
 
+    def get_custom_drivers(self):
+        """Get all custom drivers from database"""
+
+        cursor = self.__conn.execute('SELECT * FROM custom')
+        return cursor.fetchall()
+
     def get_profile_drivers_labels(self, name):
         """Get all drivers labels for a specific profile from database"""
 
@@ -74,11 +101,11 @@ class Database(object):
             'WHERE profile=(SELECT id FROM profile WHERE name=?)', (name,))
         return cursor.fetchall()
 
-    def get_profile_custom_drivers(self, name):
-        """Get custom drivers list for a specific profile"""
+    def get_profile_remote_drivers(self, name):
+        """Get remote drivers list for a specific profile"""
 
         cursor = self.__conn.execute(
-            'SELECT drivers FROM custom '
+            'SELECT drivers FROM remote '
             'WHERE profile=(SELECT id FROM profile WHERE name=?)', (name,))
         return cursor.fetchone()
 
@@ -96,7 +123,10 @@ class Database(object):
         """Add Profile"""
 
         c = self.__conn.cursor()
-        c.execute('INSERT INTO profile (name) VALUES(?)', (name,))
+        try:
+            c.execute('INSERT INTO profile (name) VALUES(?)', (name,))
+        except sqlite3.IntegrityError:
+            logging.warning("Profile name %s already exists.", name)
         return c.lastrowid
 
     def get_profile(self, name):
@@ -130,14 +160,28 @@ class Database(object):
             pid = self.add_profile(name)
 
         c.execute('DELETE FROM driver WHERE profile=?', (pid,))
-        c.execute('DELETE FROM custom WHERE profile=?', (pid,))
+        c.execute('DELETE FROM remote WHERE profile=?', (pid,))
 
         for driver in drivers:
             if 'label' in driver:
                 c.execute('INSERT INTO driver (label, profile) VALUES(?, ?)',
                           (driver['label'], pid))
-            elif 'custom' in driver:
-                c.execute('INSERT INTO custom (drivers, profile) VALUES(?, ?)',
-                          (driver['custom'], pid))
+            elif 'remote' in driver:
+                c.execute('INSERT INTO remote (drivers, profile) VALUES(?, ?)',
+                          (driver['remote'], pid))
         self.__conn.commit()
+        c.close()
+
+    def save_profile_custom_driver(self, driver):
+        """Save custom profile driver"""
+
+        c = self.__conn.cursor()
+        try:
+            c.execute('INSERT INTO custom (label, name, family, exec, version)'
+                      ' VALUES(?, ?, ?, ?, ?)',
+                      (driver['Label'], driver['Name'], driver['Family'], driver['Exec'], driver['Version']))
+            self.__conn.commit()
+        # Ignore duplicates
+        except sqlite3.Error:
+            pass
         c.close()

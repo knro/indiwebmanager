@@ -4,7 +4,8 @@ import os
 import json
 import logging
 import argparse
-from bottle import Bottle, run, template, static_file, request, response, default_app
+
+from bottle import Bottle, run, template, static_file, request, response, BaseRequest, default_app
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
 from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
 from .database import Database
@@ -12,6 +13,9 @@ from .database import Database
 # default settings
 WEB_HOST = '0.0.0.0'
 WEB_PORT = 8624
+
+# Make it 10MB
+BaseRequest.MEMFILE_MAX = 50 * 1024 * 1024
 
 pkg_path, _ = os.path.split(os.path.abspath(__file__))
 views_path = os.path.join(pkg_path, 'views')
@@ -64,6 +68,8 @@ indi_server = IndiServer(args.fifo, args.conf)
 db_path = os.path.join(args.conf, 'profiles.db')
 db = Database(db_path)
 
+collection.parse_custom_drivers(db.get_custom_drivers())
+
 if args.server == 'standalone':
     app = Bottle()
     logging.info('using Bottle as standalone server')
@@ -81,12 +87,12 @@ def start_profile(profile):
     profile_drivers = db.get_profile_drivers_labels(profile)
     all_drivers = [collection.by_label(d['label']) for d in profile_drivers]
 
-    # Find if we have any custom drivers
-    custom_drivers = db.get_profile_custom_drivers(profile)
-    if custom_drivers:
-        drivers = custom_drivers['drivers'].split(',')
+    # Find if we have any remote drivers
+    remote_drivers = db.get_profile_remote_drivers(profile)
+    if remote_drivers:
+        drivers = remote_drivers['drivers'].split(',')
         for drv in drivers:
-            all_drivers.append(DeviceDriver(drv, drv, "1.0", drv, "Custom"))
+            all_drivers.append(DeviceDriver(drv, drv, "1.0", drv, "Remote"))
 
     if all_drivers:
         indi_server.start(info['port'], all_drivers)
@@ -117,10 +123,10 @@ def main_form():
     return template(os.path.join(views_path, 'form.tpl'), profiles=profiles,
                     drivers=drivers, saved_profile=saved_profile)
 
-
 ###############################################################################
 # Profile endpoints
 ###############################################################################
+
 
 @app.get('/api/profiles')
 def get_json_profiles():
@@ -166,6 +172,15 @@ def save_profile_drivers(name):
     db.save_profile_drivers(name, data)
 
 
+@app.post('/api/profiles/custom')
+def save_profile_custom_driver():
+    """Add custom driver to existing profile"""
+    data = request.json
+    db.save_profile_custom_driver(data)
+    collection.clear_custom_drivers()
+    collection.parse_custom_drivers(db.get_custom_drivers())
+
+
 @app.get('/api/profiles/<item>/labels')
 def get_json_profile_labels(item):
     """Get driver labels of specific profile"""
@@ -173,12 +188,13 @@ def get_json_profile_labels(item):
     return json.dumps(results)
 
 
-@app.get('/api/profiles/<item>/custom')
-def get_custom_drivers(item):
-    """Get custom drivers of specific profile"""
-    results = db.get_profile_custom_drivers(item)
-    js = json.dumps(results)
-    return [] if js == 'null' else js
+@app.get('/api/profiles/<item>/remote')
+def get_remote_drivers(item):
+    """Get remote drivers of specific profile"""
+    results = db.get_profile_remote_drivers(item)
+    if results is None:
+        results = {}
+    return json.dumps(results)
 
 
 ###############################################################################
@@ -199,10 +215,15 @@ def get_server_drivers():
     # for driver in indi_server.get_running_drivers():
     #     status.append({'driver': driver})
     # return json.dumps(status)
-    labels = []
-    for label in sorted(indi_server.get_running_drivers().keys()):
-        labels.append({'driver': label})
-    return json.dumps(labels)
+    # labels = []
+    # for label in sorted(indi_server.get_running_drivers().keys()):
+    #     labels.append({'driver': label})
+    # return json.dumps(labels)
+    drivers = []
+    if indi_server.is_running() is True:
+        for driver in indi_server.get_running_drivers().values():
+            drivers.append(driver.__dict__)
+    return json.dumps(drivers)
 
 
 @app.post('/api/server/start/<profile>')
