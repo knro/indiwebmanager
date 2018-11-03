@@ -117,6 +117,5 @@
 <script src="/static/js/bootstrap-select.min.js"></script>
 <script src="/static/js/jquery-ui.min.js"></script>
 <script src="/static/js/indi.js"></script>
-<script src="/static/js/bootstrap-confirmation.min.js"></script>
 </body>
 </html>
