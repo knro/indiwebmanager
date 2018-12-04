@@ -46,14 +46,16 @@ function saveProfileInfo() {
     console.log(name);
     var port = $("#profile_port").val();
     console.log(port);
-    var autostart = ($('#profile_auto').is(':checked')) ? 1 : 0;
-    console.log(autostart);
+    var autostart = ($('#profile_auto_start').is(':checked')) ? 1 : 0;
+    var autoconnect = ($('#profile_auto_connect').is(':checked')) ? 1 : 0;
+    //console.log(autostart);
     //var url     =  "/api/profiles/" + name + "/" + port + "/" + autostart;
     var url = "/api/profiles/" + name;
 
     var profileInfo = {
         "port": port,
-        "autostart": autostart
+        "autostart": autostart,
+        "autoconnect": autoconnect,
     };
     profileInfo = JSON.stringify(profileInfo);
     console.log("Profile info " + profileInfo);
@@ -156,9 +158,14 @@ function loadProfileData() {
 
     $.getJSON(url, function(info) {
         if (info.autostart == 1)
-            $("#profile_auto").prop("checked", true);
+            $("#profile_auto_start").prop("checked", true);
         else
-            $("#profile_auto").prop("checked", false);
+            $("#profile_auto_start").prop("checked", false);
+
+        if (info.autoconnect == 1)
+            $("#profile_auto_connect").prop("checked", true);
+        else
+            $("#profile_auto_connect").prop("checked", false);
 
         $("#profile_port").val(info.port);
 

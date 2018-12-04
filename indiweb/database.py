@@ -3,7 +3,7 @@ import errno
 import sqlite3
 import logging
 
-VERSION = "0.1.5"
+VERSION = "0.1.6"
 
 
 def dict_factory(cursor, row):
@@ -28,12 +28,30 @@ class Database(object):
         self.__conn = sqlite3.connect(filename, check_same_thread=False)
         self.__conn.row_factory = dict_factory
 
+        # update table for version and any schema updates
+        self.update()
         # create new tables if they doesn't exist
         self.create(filename)
 
+    def update(self):
+        c = self.__conn.cursor()
+        # Check if we have a version table.
+        try:
+            c.execute('SELECT version FROM Version')
+            result = c.fetchone()
+            # Add autoconnect to profile before 0.1.6
+            if result['version'] < '0.1.6':
+                c.execute('ALTER TABLE profile ADD COLUMN autoconnect INTEGER DEFAULT 0')
+        except sqlite3.Error:
+            pass
+
+        try:
+            c.execute('UPDATE Version SET version=?', VERSION)
+        except sqlite3.Error:
+            pass
+
     def create(self, filename):
         c = self.__conn.cursor()
-
         # Check if we have a version table. If not, then the scheme is too old and needs updating
         try:
             c.execute('SELECT version FROM Version')
@@ -60,7 +78,8 @@ class Database(object):
         c.execute('CREATE TABLE IF NOT EXISTS '
                   'profile (id INTEGER PRIMARY KEY AUTOINCREMENT,'
                   'name TEXT UNIQUE, port INTEGER DEFAULT 7624, '
-                  'autostart INTEGER DEFAULT 0)')
+                  'autostart INTEGER DEFAULT 0, '
+                  'autoconnect INTEGER DEFAULT 0)')
         c.execute('UPDATE Version SET version=?', (VERSION,))
 
         self.__conn.commit()
@@ -136,15 +155,15 @@ class Database(object):
                                      (name,))
         return cursor.fetchone()
 
-    def update_profile(self, name, port, autostart=False):
+    def update_profile(self, name, port, autostart=False, autoconnect=False):
         """Update profile info"""
 
         c = self.__conn.cursor()
         if autostart:
             # If we have a profile with autostart=1, reset everyone else to 0
             c.execute('UPDATE profile SET autostart=0')
-        c.execute('UPDATE profile SET port=?, autostart=? WHERE name=?',
-                  (port, autostart, name))
+        c.execute('UPDATE profile SET port=?, autostart=?, autoconnect=? WHERE name=?',
+                  (port, autostart, autoconnect, name))
         self.__conn.commit()
         c.close()
 

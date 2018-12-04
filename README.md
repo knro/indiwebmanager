@@ -170,7 +170,7 @@ URL | Method | Return | Format
 /api/profiles | GET | Returns all profiles | [{"port": number, "id": ID, "autostart": number, "name": profile_name}, ...]
 
 **Example:** curl http://localhost:8624/api/profiles
-**Reply:** [{"port": 7624, "id": 1, "autostart": 0, "name": "Simulators"}, {"port": 7624, "id": 2, "autostart": 0, "name": "EQ5"}]
+**Reply:** [{"port": 7624, "id": 1, "autostart": 0, "autoconnect": 0, "name": "Simulators"}, {"port": 7624, "id": 2, "autostart": 0, "name": "EQ5"}]
 
 ### TODO
 

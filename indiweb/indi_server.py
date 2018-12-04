@@ -100,6 +100,21 @@ class IndiServer(object):
     def get_state(self, dev, prop):
         return self.get_prop(dev, prop, '_STATE')
 
+    def auto_connect(self):
+        cmd = ['indi_getprop', '*.CONNECTION.CONNECT']
+        output = ""
+        try:
+            output = check_output(cmd).decode('utf_8')
+        except e:
+            pass
+        logging.info(output)
+        output = output.replace("Off", "On")
+        logging.info(output)
+        for dev in output.splitlines():
+            command = ['indi_setprop', dev]
+            logging.info(command)
+            call(command)
+
     def get_running_drivers(self):
         # drivers = [proc.name() for proc in psutil.process_iter() if
         #            proc.name().startswith('indi_')]

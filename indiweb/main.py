@@ -4,6 +4,8 @@ import os
 import json
 import logging
 import argparse
+from threading import Timer
+from subprocess import call
 
 from bottle import Bottle, run, template, static_file, request, response, BaseRequest, default_app
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
@@ -80,7 +82,6 @@ else:
 saved_profile = None
 active_profile = ""
 
-
 def start_profile(profile):
     info = db.get_profile(profile)
 
@@ -96,6 +97,10 @@ def start_profile(profile):
 
     if all_drivers:
         indi_server.start(info['port'], all_drivers)
+        # Auto connect drivers in 3 seconds if required.
+        if info['autoconnect'] == 1:
+            t = Timer(3, indi_server.auto_connect)
+            t.start()
 
 
 @app.route('/static/<path:path>')
@@ -156,13 +161,14 @@ def delete_profile(name):
 
 @app.put('/api/profiles/<name>')
 def update_profile(name):
-    """Update profile info (port & autostart)"""
+    """Update profile info (port & autostart & autoconnect)"""
     response.set_cookie("indiserver_profile", name,
                         None, max_age=3600000, path='/')
     data = request.json
     port = data.get('port', args.indi_port)
     autostart = bool(data.get('autostart', 0))
-    db.update_profile(name, port, autostart)
+    autoconnect = bool(data.get('autoconnect', 0))
+    db.update_profile(name, port, autostart, autoconnect)
 
 
 @app.post('/api/profiles/<name>/drivers')
