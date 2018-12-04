@@ -5,7 +5,6 @@ import json
 import logging
 import argparse
 from threading import Timer
-from subprocess import call
 
 from bottle import Bottle, run, template, static_file, request, response, BaseRequest, default_app
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
