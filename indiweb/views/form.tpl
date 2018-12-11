@@ -8,7 +8,7 @@
 
   <!-- Set the page to the width of the device and set the zoon level -->
   <meta name="viewport" content="width = device-width, initial-scale = 1">
-  <title>StellarMate Web Manager</title>
+  <title>INDI Web Manager</title>
   <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css">
   <link rel="stylesheet" type="text/css" href="/static/css/jquery-ui.min.css">
   <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-select.min.css">
@@ -41,7 +41,10 @@
              <button class="btn btn-default" onClick="removeProfile()" data-toggle="tooltip" title="Delete Profile"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button>
            </span>
 		</div>
-		<div class="checkbox"><label><input id="profile_auto" onChange="saveProfileInfo()" type="checkbox" value="Autostart">Auto Start</label></div>
+		<div>
+		    <label class="checkbox-inline"><input id="profile_auto_start" onChange="saveProfileInfo()" type="checkbox" value="Autostart">Auto Start</label>
+		    <label class="checkbox-inline"><input id="profile_auto_connect" onChange="saveProfileInfo()" type="checkbox" value="Autoconnect">Auto Connect</label>
+		</div>
        </div>
      </div>
 
@@ -117,6 +120,5 @@
 <script src="/static/js/bootstrap-select.min.js"></script>
 <script src="/static/js/jquery-ui.min.js"></script>
 <script src="/static/js/indi.js"></script>
-<script src="/static/js/bootstrap-confirmation.min.js"></script>
 </body>
 </html>
