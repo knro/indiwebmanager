@@ -34,7 +34,7 @@ class DriverCollection:
     def parse_drivers(self):
         for fname in os.listdir(self.path):
             # Skip Skeleton files
-            if fname.endswith(".xml") and "_sk" not in fname:
+            if fname.endswith('.xml') and '_sk' not in fname:
                 self.files.append(os.path.join(self.path, fname))
 
         for fname in self.files:
@@ -46,10 +46,10 @@ class DriverCollection:
                     family = group.attrib['group']
 
                     for device in group.findall('device'):
-                        label = device.attrib["label"]
-                        skel = device.attrib.get("skel", None)
+                        label = device.attrib['label']
+                        skel = device.attrib.get('skel', None)
                         drv = device.find('driver')
-                        name = drv.attrib["name"]
+                        name = drv.attrib['name']
                         binary = drv.text
                         version = device.findtext('version', '0.0')
 

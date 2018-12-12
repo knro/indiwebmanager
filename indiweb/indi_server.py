@@ -105,11 +105,11 @@ class IndiServer(object):
         output = ""
         try:
             output = check_output(cmd).decode('utf_8')
-        except e:
-            pass
-        logging.info(output)
+        except Exception as e:
+            logging.error(e)
+
         output = output.replace("Off", "On")
-        logging.info(output)
+
         for dev in output.splitlines():
             command = ['indi_setprop', dev]
             logging.info(command)

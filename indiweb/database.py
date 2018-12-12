@@ -2,8 +2,7 @@ import os
 import errno
 import sqlite3
 import logging
-
-VERSION = "0.1.6"
+from . import __version__
 
 
 def dict_factory(cursor, row):
@@ -46,7 +45,7 @@ class Database(object):
             pass
 
         try:
-            c.execute('UPDATE Version SET version=?', VERSION)
+            c.execute('UPDATE Version SET version=?', __version__)
         except sqlite3.Error:
             pass
 
@@ -62,7 +61,7 @@ class Database(object):
             except sqlite3.Error:
                 pass
             c.execute('CREATE TABLE Version (version TEXT)')
-            c.execute('INSERT INTO Version (version) values(?)', (VERSION,))
+            c.execute('INSERT INTO Version (version) values(?)', (__version__,))
 
         c.execute('CREATE TABLE IF NOT EXISTS '
                   'driver (id INTEGER PRIMARY KEY AUTOINCREMENT,'
@@ -80,7 +79,7 @@ class Database(object):
                   'name TEXT UNIQUE, port INTEGER DEFAULT 7624, '
                   'autostart INTEGER DEFAULT 0, '
                   'autoconnect INTEGER DEFAULT 0)')
-        c.execute('UPDATE Version SET version=?', (VERSION,))
+        c.execute('UPDATE Version SET version=?', (__version__,))
 
         self.__conn.commit()
 

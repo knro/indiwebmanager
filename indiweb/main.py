@@ -81,6 +81,7 @@ else:
 saved_profile = None
 active_profile = ""
 
+
 def start_profile(profile):
     info = db.get_profile(profile)
 
