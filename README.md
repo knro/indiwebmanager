@@ -56,10 +56,21 @@ Then using your favorite web browser, go to
 running locally. If the INDI Web Manager is installed on a remote system,
 simply replace localhost with the hostname or IP address of the remote system.
 
-# Auto start
+# Auto Start
 
 If you selected any profile as **Auto Start** then the INDI server shall be
 automatically started when the service is executed at start up.
+
+# Auto Connect
+
+Similary to Auto Start, **Auto Connect** would connect all the drivers after
+the server is up and running.
+
+# Start vs. Connect
+
+What is the difference between *starting* a driver and *connecting* a driver?
+- Start: The INDI server executes the driver. The driver starts up and provide a list of properties. It does not establish connection with the physical device.
+- Connect: Establish connection to the physical device.
 
 # Systemd configuration
 
@@ -124,7 +135,14 @@ the hostname:port running the INDI Web Manager.
 
 ### Start Server
 
- TODO
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/server/<name>/start | POST | None | []
+
+Where name is the equipment profile name to start.
+
+**Example:** curl -X POST http://localhost:8624/api/server/start/Simulators
+**Reply:** None
 
 ### Stop Server
 URL | Method | Return | Format
@@ -172,7 +190,39 @@ URL | Method | Return | Format
 **Example:** curl http://localhost:8624/api/profiles
 **Reply:** [{"port": 7624, "id": 1, "autostart": 0, "autoconnect": 0, "name": "Simulators"}, {"port": 7624, "id": 2, "autostart": 0, "name": "EQ5"}]
 
-### TODO
+### Get One Profile
+
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/profiles/<name> | GET | Returns one Profile
+
+**Example:** curl http://localhost:8624/api/profiles/Simulators
+**Reply:** {"id": 1, "name": "Simulators", "port": 7624, "autostart": 0, "autoconnect": 0}
+
+### Update One Profile
+
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/profiles/<name> | PUT | Update profile info (port, autostar, autoconnect)
+
+**Example:** curl -H 'Content-Type: application/json' -X PUT -d '{"port":9000,"autostart":1,"autoconnect":0}' http://localhost:8624/api/profiles/Simulators
+**Reply:** None
+
+### Save drivers to profile
+
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/profiles/<name>/drivers | POST | Save local and remote drivers to a profile. 
+If profile does not exist, it is created. It expects an array of drivers.
+- Local drivers must define the *label* attribute.
+- Remote drivers must define the *remote* attribute.
+
+For example:
+[{"label":"Pegasus UPB"},{"remote":"astrometry@myremoteobservatory.com"}]
+
+To add the drivers above to a profile named **My Obs**, we call the following.
+**Example:** curl -H 'Content-Type: application/json' -X POST -d '[{"label":"Pegasus UPB"},{"remote":"astrometry@myremoteobservatory.com"}]' http://localhost:8624/api/profiles/My%20Obs/drivers
+**Reply:** None
 
 # Authors
 
