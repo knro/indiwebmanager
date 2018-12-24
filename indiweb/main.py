@@ -320,5 +320,7 @@ def main():
     logging.info("Exiting")
 
 
-if __name__ == '__init__':
+# JM 2018-12-24: Added __main__ so I can debug this as a module in PyCharm
+# Otherwise, I couldn't get it to run main as all
+if __name__ == '__init__' or __name__ == '__main__':
     main()
