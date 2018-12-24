@@ -19,7 +19,6 @@ class DeviceDriver:
         self.binary = binary
         self.family = family
         self.custom = custom
-        self.role = ""
 
 
 class DriverCollection:
