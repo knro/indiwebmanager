@@ -137,7 +137,7 @@ the hostname:port running the INDI Web Manager.
 
 URL | Method | Return | Format
 --- | --- | --- | ---
-/api/server/<name>/start | POST | None | []
+/api/server/\<name>/start | POST | None | []
 
 Where name is the equipment profile name to start.
 
@@ -152,17 +152,26 @@ URL | Method | Return | Format
 ### Get running drivers list
 URL | Method | Return | Format
 --- | --- | --- | ---
-/api/server/drivers | GET | Returns an array for all the locally running drivers | {'driver': driver_executable}
+/api/server/drivers | GET | Returns an array for all the locally **running** drivers
+
+The format is as following:
+- **Name**: Driver name. If no label is specified, the driver uses this default name.
+- **Label**: If specified, set the driver name to this label.
+- **Skeleton**: XML Skeleton path which is used by some drivers (e.g. EQMod)
+- **Version**: Driver version.
+- **Binary**: Executable driver binary
+- **Family**: Category of driver (Telescopes, CCDs, Domes..etc)
+- **Custom**: True if the driver is custom, false otherwise
 
 **Example:** curl http://localhost:8624/api/server/drivers
-**Reply:** [{"driver": "indi_simulator_ccd"}, {"driver": "indi_simulator_telescope"}, {"driver": "indi_simulator_focus"}]
+**Reply:** [{"name": "Telescope Simulator", "label": "Telescope Simulator", "skeleton": null, "version": "1.0", "binary": "indi_simulator_telescope", "family": "Telescopes", "custom": false}, {"name": "CCD Simulator", "label": "CCD Simulator", "skeleton": null, "version": "1.0", "binary": "indi_simulator_ccd", "family": "CCDs", "custom": false}, {"name": "Focuser Simulator", "label": "Focuser Simulator", "skeleton": null, "version": "1.0", "binary": "indi_simulator_focus", "family": "Focusers", "custom": false}]
 
 ## Profiles
 
 ### Add new profile
 URL | Method | Return | Format
 --- | --- | --- | ---
-/api/profiles/<name> | POST | None | None
+/api/profiles/\<name> | POST | None | None
 
 To add a profile named **foo**:
 
@@ -173,7 +182,7 @@ curl -H "Content-Type: application/json" -X POST http://localhost:8624/api/profi
 ### Delete profile
 URL | Method | Return | Format
 --- | --- | --- | ---
-/api/profiles/<name> | DELETE | None | None
+/api/profiles/\<name> | DELETE | None | None
 
 To delete a profile named **foo**:
 
@@ -194,7 +203,7 @@ URL | Method | Return | Format
 
 URL | Method | Return | Format
 --- | --- | --- | ---
-/api/profiles/<name> | GET | Returns one Profile
+/api/profiles/\<name> | GET | Returns one Profile
 
 **Example:** curl http://localhost:8624/api/profiles/Simulators
 **Reply:** {"id": 1, "name": "Simulators", "port": 7624, "autostart": 0, "autoconnect": 0}
@@ -203,7 +212,7 @@ URL | Method | Return | Format
 
 URL | Method | Return | Format
 --- | --- | --- | ---
-/api/profiles/<name> | PUT | Update profile info (port, autostar, autoconnect)
+/api/profiles/\<name> | PUT | Update profile info (port, autostar, autoconnect)
 
 **Example:** curl -H 'Content-Type: application/json' -X PUT -d '{"port":9000,"autostart":1,"autoconnect":0}' http://localhost:8624/api/profiles/Simulators
 **Reply:** None
@@ -212,7 +221,7 @@ URL | Method | Return | Format
 
 URL | Method | Return | Format
 --- | --- | --- | ---
-/api/profiles/<name>/drivers | POST | Save local and remote drivers to a profile. 
+/api/profiles/\<name>/drivers | POST | Save local and remote drivers to a profile. 
 If profile does not exist, it is created. It expects an array of drivers.
 - Local drivers must define the *label* attribute.
 - Remote drivers must define the *remote* attribute.
@@ -222,6 +231,59 @@ For example:
 
 To add the drivers above to a profile named **My Obs**, we call the following.
 **Example:** curl -H 'Content-Type: application/json' -X POST -d '[{"label":"Pegasus UPB"},{"remote":"astrometry@myremoteobservatory.com"}]' http://localhost:8624/api/profiles/My%20Obs/drivers
+**Reply:** None
+
+## Drivers
+
+### List all Groups
+
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/drivers/groups | GET | Get the driver categories
+
+**Example:** curl http://localhost:8624/api/drivers/groups
+**Reply:** ["Adaptive Optics", "Agent", "Auxiliary", "CCDs", "Detectors", "Domes", "Filter Wheels", "Focusers", "Spectrographs", "Telescopes", "Weather"]
+
+### List all drivers
+
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/drivers | GET | Get all the drivers information
+
+**Example:** curl http://localhost:8624/api/drivers
+**Reply:** [{"name": "AAG Cloud Watcher", "label": "AAG Cloud Watcher", "skeleton": null, "version": "1.4", "binary": "indi_aagcloudwatcher", "family": "Weather", "custom": false}, {"name": "ASI EFW", "label": "ASI EFW", "skeleton": null, "version": "0.9", "binary": "indi_asi_wheel", "family": "Filter Wheels", "custom": false}.....]
+
+### Start specific driver
+
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/drivers/start/\<label>| POST | Start a specific driver if INDI server is already running.
+
+All spaces must be encoded with %20 as per URI standards.
+
+**Example:** http://localhost:8624/api/drivers/start/Pegasus%20UPB
+**Reply:** None
+
+### Stop specific driver
+
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/drivers/stop/\<label>| POST | Stop a specific driver if INDI server is already running.
+
+All spaces must be encoded with %20 as per URI standards.
+
+**Example:** http://localhost:8624/api/drivers/stop/Pegasus%20UPB
+**Reply:** None
+
+### Restart specific driver
+
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/drivers/restart/\<label>| POST | Restart a specific driver if INDI server is already running.
+
+All spaces must be encoded with %20 as per URI standards.
+
+**Example:** http://localhost:8624/api/drivers/restart/Pegasus%20UPB
 **Reply:** None
 
 # Authors
