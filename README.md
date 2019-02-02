@@ -286,6 +286,15 @@ All spaces must be encoded with %20 as per URI standards.
 **Example:** http://localhost:8624/api/drivers/restart/Pegasus%20UPB
 **Reply:** None
 
+# Development
+
+To run indiweb directly from the source directory make sure prerequisits are
+installed and use:
+
+```
+python3 -m indiweb.main
+```
+
 # Authors
 
 Jasem Mutlaq (mutlaqja@ikarustech.com)
