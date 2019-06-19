@@ -10,6 +10,7 @@ from bottle import Bottle, run, template, static_file, request, response, BaseRe
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
 from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
 from .database import Database
+from .device import Device
 
 # default settings
 WEB_HOST = '0.0.0.0'
@@ -65,6 +66,7 @@ logging.debug("command line arguments: " + str(vars(args)))
 
 collection = DriverCollection(args.xmldir)
 indi_server = IndiServer(args.fifo, args.conf)
+indi_device = Device()
 
 db_path = os.path.join(args.conf, 'profiles.db')
 db = Database(db_path)
@@ -301,10 +303,19 @@ def restart_driver(label):
     indi_server.start_driver(driver)
     logging.info('Driver "%s" restarted.' % label)
 
+###############################################################################
+# Device endpoints
+###############################################################################
+
+
+@app.get('/api/devices')
+def get_devices():
+    return json.dumps(indi_device.get_devices())
 
 ###############################################################################
 # Startup standalone server
 ###############################################################################
+
 
 def main():
     """Start autostart profile if any"""
