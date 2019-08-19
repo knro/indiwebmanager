@@ -36,10 +36,6 @@ class IndiServer(object):
         # escape quotes if they exist
         cmd = 'start %s' % driver.binary
 
-        if "@" not in driver.binary:
-            conf = os.path.join(self.__conf_dir, driver.label + '_config.xml')
-            cmd += ' -c "%s" -n "%s"' % (conf, driver.label)
-
         if driver.skeleton:
             cmd += ' -s "%s"' % driver.skeleton
 
