@@ -4,6 +4,7 @@ import os
 import json
 import logging
 import argparse
+import socket
 from threading import Timer
 
 from bottle import Bottle, run, template, static_file, request, response, BaseRequest, default_app
@@ -127,8 +128,10 @@ def main_form():
         saved_profile = request.get_cookie('indiserver_profile') or 'Simulators'
 
     profiles = db.get_profiles()
+    hostname = socket.gethostname()
     return template(os.path.join(views_path, 'form.tpl'), profiles=profiles,
-                    drivers=drivers, saved_profile=saved_profile)
+                    drivers=drivers, saved_profile=saved_profile,
+                    hostname=hostname)
 
 ###############################################################################
 # Profile endpoints
