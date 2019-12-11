@@ -61,11 +61,11 @@ if args.logfile:
     logging.basicConfig(filename=args.logfile,
                         format='%(asctime)s - %(levelname)s: %(message)s',
                         level=logging_level)
-    
+
 if args.reboot:
     logging.info('System reboot...')
     # subprocess.run("systemctl reboot")
- 
+
 else:
     logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s',
                         level=logging_level)
@@ -326,13 +326,15 @@ def get_devices():
 # System control endpoints
 ###############################################################################
 
+
 @app.post('/api/system/reboot')
 def system_reboot():
     """reboot the system running indi-web"""
     logging.info('System reboot, stopping server...')
     stop_server()
     logging.info('rebooting...')
-    response = subprocess.call('reboot')
+    subprocess.call('reboot')
+
 
 @app.post('/api/system/poweroff')
 def system_poweroff():
@@ -340,11 +342,12 @@ def system_poweroff():
     logging.info('System poweroff, stopping server...')
     stop_server()
     logging.info('poweroff...')
-    response = subprocess.run("poweroff")
+    subprocess.run("poweroff")
 
 ###############################################################################
 # Startup standalone server
 ###############################################################################
+
 
 def main():
     """Start autostart profile if any"""
