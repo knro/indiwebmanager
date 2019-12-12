@@ -9,7 +9,7 @@ INDI_PORT = 7624
 INDI_FIFO = '/tmp/indiFIFO'
 try:
     INDI_CONFIG_DIR = os.path.join(os.environ['HOME'], '.indi')
-except KeyError as e:
+except KeyError:
     INDI_CONFIG_DIR = '/tmp/indi'
 
 

@@ -273,10 +273,10 @@ function getActiveDrivers() {
         var counter = 0;
         $.each(data, function(i, field) {
             msg += "<li>" + "<button class=\"btn btn-xs\" " +
-		"onCLick=\"restartDriver('" + field.label + "')\" data-toggle=\"tooltip\" " +
-		"title=\"Restart Driver\">" +
-		"<span class=\"glyphicon glyphicon-repeat\" aria-hidden=\"true\"></span></button> " +
-		field.label + "</li>";
+        "onCLick=\"restartDriver('" + field.label + "')\" data-toggle=\"tooltip\" " +
+        "title=\"Restart Driver\">" +
+        "<span class=\"glyphicon glyphicon-repeat\" aria-hidden=\"true\"></span></button> " +
+        field.label + "</li>";
             counter++;
         });
 
@@ -299,10 +299,40 @@ function restartDriver(label) {
             url: "/api/drivers/restart/" + label,
             success: function() {
                 getStatus();
-		$("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Restarting driver "' + label + '" succeeded.</div>');
+        $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Restarting driver "' + label + '" succeeded.</div>');
             },
             error: function() {
                 alert('Restarting driver "' + label + '" failed!');
             }
         });
  }
+
+function rebootSystem(){
+    $.ajax({
+        type: 'POST',
+        url: "/api/system/reboot",
+        success: function(){
+            $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Reboot system succeeded.</div>');
+        },
+        error: function(){
+            alert('Rebooting system failed!');
+        }
+    });
+}
+
+function poweroffSystem()
+{
+        $.ajax(
+        {
+            type: 'POST',
+            url: "/api/system/poweroff",
+            success: function()
+            {
+                $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>SPoweroff system succeeded.</div>');
+            },
+            error: function()
+            {
+                alert('Poweroff remote system failed!');
+            }
+        });
+}

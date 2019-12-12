@@ -79,15 +79,21 @@ class DriverCollection:
             if (driver.label == label):
                 return driver
 
+        return None
+
     def by_name(self, name):
         for driver in self.drivers:
             if (driver.name == name):
                 return driver
 
+        return None
+
     def by_binary(self, binary):
         for driver in self.drivers:
             if (driver.binary == binary):
                 return driver
+
+        return None
 
     def get_families(self):
         families = {}

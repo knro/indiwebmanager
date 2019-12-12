@@ -6,6 +6,7 @@ import logging
 import argparse
 import socket
 from threading import Timer
+import subprocess
 
 from bottle import Bottle, run, template, static_file, request, response, BaseRequest, default_app
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
@@ -22,7 +23,6 @@ BaseRequest.MEMFILE_MAX = 50 * 1024 * 1024
 
 pkg_path, _ = os.path.split(os.path.abspath(__file__))
 views_path = os.path.join(pkg_path, 'views')
-
 
 parser = argparse.ArgumentParser(
     description='INDI Web Manager. '
@@ -59,6 +59,7 @@ if args.logfile:
     logging.basicConfig(filename=args.logfile,
                         format='%(asctime)s - %(levelname)s: %(message)s',
                         level=logging_level)
+
 else:
     logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s',
                         level=logging_level)
@@ -314,6 +315,28 @@ def restart_driver(label):
 @app.get('/api/devices')
 def get_devices():
     return json.dumps(indi_device.get_devices())
+
+###############################################################################
+# System control endpoints
+###############################################################################
+
+
+@app.post('/api/system/reboot')
+def system_reboot():
+    """reboot the system running indi-web"""
+    logging.info('System reboot, stopping server...')
+    stop_server()
+    logging.info('rebooting...')
+    subprocess.call('reboot')
+
+
+@app.post('/api/system/poweroff')
+def system_poweroff():
+    """poweroff the system"""
+    logging.info('System poweroff, stopping server...')
+    stop_server()
+    logging.info('poweroff...')
+    subprocess.run("poweroff")
 
 ###############################################################################
 # Startup standalone server

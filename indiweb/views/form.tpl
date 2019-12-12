@@ -96,6 +96,14 @@
 
             <button id="server_command" onClick="toggleServer()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> Start</button>
             <div id="notify_message"></div>
+            
+            <div class="col-sm-6">
+                <label for="rebootShutdown" class="control-label">Poweroff Reboot:</label>
+                <button id="system_reboot" onClick="rebootSystem()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> Reboot remote System</button>
+                <div id="notify_message"></div>
+                <button id="system_poweroff" onClick="poweroffSystem()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> PowerOff remote System</button>
+                <div id="notify_message"></div>
+            </div>
         </div>
         <div class="col-sm-6">
             <div class="form-group">
@@ -107,9 +115,7 @@
 
 
     <div class="row">
-        <div class="col-sm-6">
 
-        </div>
     </div>
 
    </div>
