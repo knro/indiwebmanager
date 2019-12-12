@@ -47,8 +47,6 @@ parser.add_argument('--logfile', '-l', help='log file name')
 parser.add_argument('--server', '-s', default='standalone',
                     help='HTTP server [standalone|apache] (default: standalone')
 
-parser.add_argument('--reboot', '-r', help='reboot system')
-
 args = parser.parse_args()
 
 
@@ -61,10 +59,6 @@ if args.logfile:
     logging.basicConfig(filename=args.logfile,
                         format='%(asctime)s - %(levelname)s: %(message)s',
                         level=logging_level)
-
-if args.reboot:
-    logging.info('System reboot...')
-    # subprocess.run("systemctl reboot")
 
 else:
     logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s',
