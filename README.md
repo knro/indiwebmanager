@@ -75,8 +75,14 @@ What is the difference between *starting* a driver and *connecting* a driver?
 # Systemd configuration
 
 The provided file `indiwebmanager.service` is an example *systemd service file*
-that can be used to run `indi-web` as *pi* user. If your username is different
+that can be used to run `indi-web` at startup as *pi* user. If your username is different
 please edit the file and change the username first.
+
+Indiwebmanager must be installed system-wide:
+
+```
+sudo pip install indiweb
+```
 
 Copy your preferred service file to `/etc/systemd/system`:
 
@@ -284,6 +290,30 @@ URL | Method | Return | Format
 All spaces must be encoded with %20 as per URI standards.
 
 **Example:** http://localhost:8624/api/drivers/restart/Pegasus%20UPB
+**Reply:** None
+
+## System Commands
+
+### Reboot the system 
+
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/system/reboot| POST | Reboot the system on which the INDI server is running.
+
+The driver and indi server are closed.
+
+**Example:** http://localhost:8624/api/system/reboot
+**Reply:** None
+
+### Poweroff the system 
+
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/system/poweroff| POST | powers off the system on which the INDI server is running.
+
+The driver and indi server are closed.
+
+**Example:** http://localhost:8624/api/system/poweroff
 **Reply:** None
 
 # Development
