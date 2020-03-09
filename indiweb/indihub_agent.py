@@ -18,6 +18,7 @@ if not os.path.exists(INDIHUB_AGENT_CONFIG):
 
 INDIHUB_AGENT_CONFIG += '/indihub.json'
 
+
 class IndiHubAgent(object):
     def __init__(self, web_addr, hostname, port):
         self.__web_addr = web_addr
@@ -29,7 +30,8 @@ class IndiHubAgent(object):
         self.stop()
 
     def __run(self, profile, mode, conf):
-        cmd = 'indihub-agent -indi-server-manager=%s -indi-profile=%s -mode=%s -conf=%s -api-origins=%s > /tmp/indihub-agent.log 2>&1 &' % \
+        cmd = 'indihub-agent -indi-server-manager=%s -indi-profile=%s -mode=%s -conf=%s -api-origins=%s > ' \
+              '/tmp/indihub-agent.log 2>&1 &' % \
               (self.__web_addr, profile, mode, conf,
                '%s:%d,%s.local:%d' % (self.__hostname, self.__port, self.__hostname, self.__port))
         logging.info(cmd)
