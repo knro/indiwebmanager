@@ -14,7 +14,11 @@
   <link rel="stylesheet" type="text/css" href="/static/css/jquery-ui.min.css">
   <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-select.min.css">
   <link rel="stylesheet" type="text/css" href="/static/css/schoolhouse.css">
-
+  <style>
+      .notbold{
+          font-weight:normal
+      }
+  </style>
 </head>
 <body>
 
@@ -96,14 +100,6 @@
 
             <button id="server_command" onClick="toggleServer()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> Start</button>
             <div id="notify_message"></div>
-            
-            <div class="col-sm-6">
-                <label for="rebootShutdown" class="control-label">Poweroff Reboot:</label>
-                <button id="system_reboot" onClick="rebootSystem()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> Reboot remote System</button>
-                <div id="notify_message"></div>
-                <button id="system_poweroff" onClick="poweroffSystem()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> PowerOff remote System</button>
-                <div id="notify_message"></div>
-            </div>
         </div>
         <div class="col-sm-6">
             <div class="form-group">
@@ -113,13 +109,61 @@
         </div>
     </div>
 
-
     <div class="row">
-
+        <div class="col-sm-6">
+            <div class="form-group">
+                <label class="control-label">Poweroff Reboot:</label>
+                <button id="system_reboot" onClick="rebootSystem()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> Reboot remote System</button>
+                <button id="system_poweroff" onClick="poweroffSystem()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> PowerOff remote System</button>
+                <div id="notify_system_message"></div>
+            </div>
+        </div>
     </div>
+  </div>
 
-   </div>
-</div>
+  <br />
+  <br />
+
+  <div class="container">
+    <h4>INDIHUB Network Agent Control</h4>
+    <div class="row">
+      <div class="col-sm-6">
+          <label>Agent Mode:</label>
+          <div class="form-check">
+              <input class="form-check-input" type="radio" name="mode" id="mode_off" value="off" checked>
+              <label class="form-check-label" for="mode_off">
+                  Off <span class="notbold">- agent is not running</span>
+              </label>
+          </div>
+          <div class="form-check">
+              <input class="form-check-input" type="radio" name="mode" id="mode_solo" value="solo">
+              <label class="form-check-label" for="mode_solo">
+                  Solo <span class="notbold">- equipment sharing is not available, contribute images</span>
+              </label>
+          </div>
+          <div class="form-check">
+              <input class="form-check-input" type="radio" name="mode" id="mode_share" value="share">
+              <label class="form-check-label" for="mode_share">
+                  Share <span class="notbold">- share your equipment and open remote access to your guests</span>
+              </label>
+          </div>
+          <div class="form-check">
+              <input class="form-check-input" type="radio" name="mode" id="mode_robotic" value="robotic">
+              <label class="form-check-label" for="mode_robotic">
+                  Robotic <span class="notbold">- your equipment is operated by smart scheduler in the cloud</span>
+              </label>
+          </div>
+          <button id="agent_command" onClick="changeAgentMode()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> Change Mode</button>
+      </div>
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label>Agent Status</label>
+          <div id="agent_notify" class="well">Off</div>
+        </div>
+      </div>
+    </div>
+    <h4>Learn more about INDIHUB network at <a href="https://indihub.space" target="_blank">indihub.space</a></h4>
+  </div>
 
 
 <script src="/static/js/jquery.min.js"></script>

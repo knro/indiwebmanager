@@ -1,15 +1,18 @@
 # INDI Web Manager
 
-INDI Web Manager is a simple Web Application to manage
-[INDI](http://www.indilib.org) server. It supports multiple driver profiles
+INDI Web Manager is a simple Web Application to manage:
+
+- [INDI](http://www.indilib.org) Server
+- [INDIHUB](https://indihub.space) Agent
+
+It supports multiple driver profiles
 along with optional custom remote drivers. It can be used to start INDI server
 locally, and also to connect or **chain** to remote INDI servers.
 
 ![INDI Web Manager](http://indilib.org/images/indi/indiwebmanager.png)
 
 The Web Application is based on [Bottle Py](http://bottlepy.org)
-micro-framework. It has a built-in webserver and by default listens on port
-8624.
+micro-framework. It has a built-in webserver and by default listens on port 8624.
 
 # Installation
 
@@ -291,6 +294,35 @@ All spaces must be encoded with %20 as per URI standards.
 
 **Example:** http://localhost:8624/api/drivers/restart/Pegasus%20UPB
 **Reply:** None
+
+## INDIHUB Agent Methods
+
+### Change indihub-agent current mode
+
+You can launch [indihub-agent](https://github.com/indihub-space/agent) in three different modes or stop it with using this endpoint.
+
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/indihub/mode/\<mode>| POST | Change indihub-agent to run in a specific mode if INDI server is already running.
+
+Possible values for URI-parameter `mode`:
+- `solo`
+- `share`
+- `robotic`
+- or `off` to stop indihub-agent process
+
+**Example:** curl -X POST /api/indihub/mode/solo
+**Reply:** None
+
+### Get indihub-agent status
+
+URL | Method | Return | Format
+--- | --- | --- | ---
+/api/indihub/status | GET | Get status of `indihub-agent`
+
+**Example:** curl /api/indihub/status
+
+**Reply:** [{'status': 'True', 'mode': 'solo', 'active_profile': 'my-profile'}]
 
 ## System Commands
 

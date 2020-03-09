@@ -13,6 +13,7 @@ from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
 from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
 from .database import Database
 from .device import Device
+from .indihub_agent import IndiHubAgent
 
 # default settings
 WEB_HOST = '0.0.0.0'
@@ -66,9 +67,13 @@ else:
 
 logging.debug("command line arguments: " + str(vars(args)))
 
+hostname = socket.gethostname()
+
 collection = DriverCollection(args.xmldir)
 indi_server = IndiServer(args.fifo, args.conf)
 indi_device = Device()
+
+indihub_agent = IndiHubAgent('%s:%d' % (args.host, args.port), hostname, args.port)
 
 db_path = os.path.join(args.conf, 'profiles.db')
 db = Database(db_path)
@@ -129,7 +134,6 @@ def main_form():
         saved_profile = request.get_cookie('indiserver_profile') or 'Simulators'
 
     profiles = db.get_profiles()
-    hostname = socket.gethostname()
     return template(os.path.join(views_path, 'form.tpl'), profiles=profiles,
                     drivers=drivers, saved_profile=saved_profile,
                     hostname=hostname)
@@ -253,6 +257,7 @@ def start_server(profile):
 @app.post('/api/server/stop')
 def stop_server():
     """Stop INDI Server"""
+    indihub_agent.stop()
     indi_server.stop()
 
     global active_profile
@@ -337,6 +342,38 @@ def system_poweroff():
     stop_server()
     logging.info('poweroff...')
     subprocess.run("poweroff")
+
+###############################################################################
+# INDIHUB Agent control endpoints
+###############################################################################
+
+
+@app.get('/api/indihub/status')
+def get_indihub_status():
+    """INDIHUB Agent status"""
+    mode = indihub_agent.get_mode()
+    is_running = indihub_agent.is_running()
+    response.content_type = 'application/json'
+    status = [{'status': str(is_running), 'mode': mode, 'active_profile': active_profile}]
+    return json.dumps(status)
+
+
+@app.post('/api/indihub/mode/<mode>')
+def change_indihub_agent_mode(mode):
+    """Change INDIHUB Agent mode with a current INDI-profile"""
+
+    if active_profile == "" or not indi_server.is_running():
+        response.content_type = 'application/json'
+        response.status = 500
+        return json.dumps({'message': 'INDI-server is not running. You need to run INDI-server first.'})
+
+    indihub_agent.stop()
+
+    if mode == 'off':
+        return
+
+    indihub_agent.start(active_profile, mode)
+
 
 ###############################################################################
 # Startup standalone server
