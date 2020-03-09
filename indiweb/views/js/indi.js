@@ -5,7 +5,7 @@ $(function()
 
     loadCurrentProfileDrivers();
     getStatus();
-    getIndihubStatus()
+    getIndihubStatus();
 
     $("#drivers_list").change(function() {
         var name = $("#profiles option:selected").text();
@@ -290,18 +290,18 @@ function getIndihubStatus() {
         success: function(data) {
             if (data[0].status != "True") {
                 $("#agent_notify").html("<p class='alert alert-success'>Agent is offline.</p>");
-                $("#mode_off").prop('checked', true)
-                return
+                $("#mode_off").prop('checked', true);
+                return;
             }
             var msg = "<p class='alert alert-info'>Agent is Online in " + data[0].mode +"-mode</p>";
             $("#agent_notify").html(msg);
-            $("#mode_"+ data[0].mode).prop('checked', true)
+            $("#mode_"+ data[0].mode).prop('checked', true);
 
             // for share-mode: get extended status info with public endpoints
             if (data[0].mode == "share") {
                 // optimistically - agent should be running and listening in no more than 3 sec
                 // (users can always refresh the page to get Agent status loaded)
-                setTimeout(getIndihubAgentStatus, 3000)
+                setTimeout(getIndihubAgentStatus, 3000);
             }
         }
     });
@@ -323,7 +323,7 @@ function getIndihubAgentStatus() {
             $("#agent_notify").html(msg);
         },
         error: function(xhr, status, error) {
-            alert("Could not load Agent data, please try to refresh the page!")
+            alert("Could not load Agent data, please try to refresh the page!");
         }
     });
 }
