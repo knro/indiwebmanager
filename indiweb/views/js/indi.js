@@ -370,6 +370,10 @@ function restartDriver(label) {
  }
 
 function rebootSystem() {
+    if (!confirm("Please press OK to confirm remote system Reboot")) {
+        return;
+    }
+
     $.ajax({
         type: 'POST',
         url: "/api/system/reboot",
@@ -383,6 +387,10 @@ function rebootSystem() {
 }
 
 function poweroffSystem() {
+    if (!confirm("Please press OK to confirm remote system Poweroff")) {
+        return;
+    }
+
     $.ajax({
         type: 'POST',
         url: "/api/system/poweroff",
