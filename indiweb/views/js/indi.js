@@ -5,6 +5,7 @@ $(function()
 
     loadCurrentProfileDrivers();
     getStatus();
+    getIndihubStatus();
 
     $("#drivers_list").change(function() {
         var name = $("#profiles option:selected").text();
@@ -246,12 +247,28 @@ function toggleServer() {
             success: function() {
                 //console.log("INDI Server stopped!");
                 getStatus();
+                getIndihubStatus(); // when INDI-server stops - INDIHUB-agent stops as well
             },
             error: function() {
                 alert('Failed to stop INDI server.');
             }
         });
     }
+}
+
+function changeAgentMode() {
+    var mode = $("input[name='mode']:checked").val();
+    $.ajax({
+        type: 'POST',
+        url: "/api/indihub/mode/" + mode,
+        success: function(data) {
+            getIndihubStatus();
+        },
+        error: function(xhr, status, error) {
+            alert('Failed to change INDIHUB Agent mode: ' + xhr.responseJSON.message);
+            getIndihubStatus();
+        }
+    });
 }
 
 function getStatus() {
@@ -263,6 +280,51 @@ function getStatus() {
             $("#server_notify").html("<p class='alert alert-success'>Server is offline.</p>");
         }
 
+    });
+}
+
+function getIndihubStatus() {
+    $.ajax({
+        type: "GET",
+        url: "/api/indihub/status",
+        success: function(data) {
+            if (data[0].status != "True") {
+                $("#agent_notify").html("<p class='alert alert-success'>Agent is offline.</p>");
+                $("#mode_off").prop('checked', true);
+                return;
+            }
+            var msg = "<p class='alert alert-info'>Agent is Online in " + data[0].mode +"-mode</p>";
+            $("#agent_notify").html(msg);
+            $("#mode_"+ data[0].mode).prop('checked', true);
+
+            // for share-mode: get extended status info with public endpoints
+            if (data[0].mode == "share") {
+                // optimistically - agent should be running and listening in no more than 3 sec
+                // (users can always refresh the page to get Agent status loaded)
+                setTimeout(getIndihubAgentStatus, 3000);
+            }
+        }
+    });
+}
+
+function getIndihubAgentStatus() {
+    $.ajax({
+        type: "GET",
+        url: "http://" + document.location.hostname + ":2020/status",
+        success: function(data) {
+            var msg = $("#agent_notify").html();
+            if (data.mode == "share") {
+                msg += "<ul>";
+                for (var i = 0; i < data.publicEndpoints.length; i++) {
+                    msg += "<li>" + data.publicEndpoints[i].name + ": <b>" + data.publicEndpoints[i].addr + "</b></li>";
+                }
+                msg += "</ul>";
+            }
+            $("#agent_notify").html(msg);
+        },
+        error: function(xhr, status, error) {
+            alert("Could not load Agent data, please try to refresh the page!");
+        }
     });
 }
 
@@ -307,12 +369,16 @@ function restartDriver(label) {
         });
  }
 
-function rebootSystem(){
+function rebootSystem() {
+    if (!confirm("Please press OK to confirm remote system Reboot")) {
+        return;
+    }
+
     $.ajax({
         type: 'POST',
         url: "/api/system/reboot",
         success: function(){
-            $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Reboot system succeeded.</div>');
+            $("#notify_system_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Reboot system succeeded.</div>');
         },
         error: function(){
             alert('Rebooting system failed!');
@@ -320,19 +386,21 @@ function rebootSystem(){
     });
 }
 
-function poweroffSystem()
-{
-        $.ajax(
+function poweroffSystem() {
+    if (!confirm("Please press OK to confirm remote system Poweroff")) {
+        return;
+    }
+
+    $.ajax({
+        type: 'POST',
+        url: "/api/system/poweroff",
+        success: function()
         {
-            type: 'POST',
-            url: "/api/system/poweroff",
-            success: function()
-            {
-                $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>SPoweroff system succeeded.</div>');
-            },
-            error: function()
-            {
-                alert('Poweroff remote system failed!');
-            }
-        });
+            $("#notify_system_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Poweroff system succeeded.</div>');
+        },
+        error: function()
+        {
+            alert('Poweroff remote system failed!');
+        }
+    });
 }
