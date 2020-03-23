@@ -32,7 +32,7 @@
         <div class="form-group">
          <label>Equipment Profile:</label>
          <div class="input-group">
-           <select onClick="loadCurrentProfileDrivers()" id="profiles" class="form-control">
+           <select onchange="loadCurrentProfileDrivers()" id="profiles" class="form-control">
 %for profile in profiles:
     %if saved_profile == profile['name']:
         <option selected>{{profile['name']}}</option>
