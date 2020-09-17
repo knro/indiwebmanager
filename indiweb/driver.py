@@ -5,7 +5,7 @@ import logging
 import xml.etree.ElementTree as ET
 
 # Default INDI data directory
-INDI_DATA_DIR = "/usr/share/indi/"
+INDI_DATA_DIR = os.environ.get('INDI_DATA_DIR', "/usr/share/indi/")
 
 
 class DeviceDriver:
