@@ -27,7 +27,7 @@ class IndiServer(object):
         call(['mkfifo', self.__fifo])
 
     def __run(self, port):
-        cmd = 'indiserver -p %d -m 100 -v -f %s > /tmp/indiserver.log 2>&1 &' % \
+        cmd = 'indiserver -p %d -m 1000 -v -f %s > /tmp/indiserver.log 2>&1 &' % \
             (port, self.__fifo)
         logging.info(cmd)
         call(cmd, shell=True)
