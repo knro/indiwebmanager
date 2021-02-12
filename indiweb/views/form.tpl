@@ -10,10 +10,10 @@
   <!-- Set the page to the width of the device and set the zoon level -->
   <meta name="viewport" content="width = device-width, initial-scale = 1">
   <title>{{hostname}} INDI Web Manager</title>
-  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css">
-  <link rel="stylesheet" type="text/css" href="/static/css/jquery-ui.min.css">
-  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-select.min.css">
-  <link rel="stylesheet" type="text/css" href="/static/css/schoolhouse.css">
+  <link rel="stylesheet" type="text/css" href="static/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="static/css/jquery-ui.min.css">
+  <link rel="stylesheet" type="text/css" href="static/css/bootstrap-select.min.css">
+  <link rel="stylesheet" type="text/css" href="static/css/schoolhouse.css">
   <style>
       .notbold{
           font-weight:normal
@@ -173,10 +173,10 @@
   </div>
 
 
-<script src="/static/js/jquery.min.js"></script>
-<script src="/static/js/bootstrap.min.js"></script>
-<script src="/static/js/bootstrap-select.min.js"></script>
-<script src="/static/js/jquery-ui.min.js"></script>
-<script src="/static/js/indi.js"></script>
+<script src="static/js/jquery.min.js"></script>
+<script src="static/js/bootstrap.min.js"></script>
+<script src="static/js/bootstrap-select.min.js"></script>
+<script src="static/js/jquery-ui.min.js"></script>
+<script src="static/js/indi.js"></script>
 </body>
 </html>

@@ -24,7 +24,7 @@ function saveProfile() {
     // Remove any extra spaces
     name = name.trim();
 
-    var url = "/api/profiles/" + name;
+    var url = "api/profiles/" + name;
 
     //console.log(url)
 
@@ -50,8 +50,8 @@ function saveProfileInfo() {
     var autostart = ($('#profile_auto_start').is(':checked')) ? 1 : 0;
     var autoconnect = ($('#profile_auto_connect').is(':checked')) ? 1 : 0;
     //console.log(autostart);
-    //var url     =  "/api/profiles/" + name + "/" + port + "/" + autostart;
-    var url = "/api/profiles/" + name;
+    //var url     =  "api/profiles/" + name + "/" + port + "/" + autostart;
+    var url = "api/profiles/" + name;
 
     var profileInfo = {
         "port": port,
@@ -81,7 +81,7 @@ function saveProfileDrivers(profile, silent) {
 
     if (typeof(silent) === 'undefined') silent = false;
 
-    var url = "/api/profiles/" + profile + "/drivers";
+    var url = "api/profiles/" + profile + "/drivers";
     var drivers = [];
 
     $("#drivers_list :selected").each(function(i, sel) {
@@ -125,7 +125,7 @@ function loadCurrentProfileDrivers() {
     clearDriverSelection();
 
     var name = $("#profiles option:selected").text();
-    var url = "/api/profiles/" + name + "/labels";
+    var url = "api/profiles/" + name + "/labels";
 
     $.getJSON(url, function(drivers) {
         $.each(drivers, function(i, driver) {
@@ -138,7 +138,7 @@ function loadCurrentProfileDrivers() {
         $("#drivers_list").selectpicker('refresh');
     });
 
-    url = encodeURI("/api/profiles/" + name + "/remote");
+    url = encodeURI("api/profiles/" + name + "/remote");
 
     $.getJSON(url, function(data) {
         if (data && data.drivers !== undefined) {
@@ -155,7 +155,7 @@ function loadCurrentProfileDrivers() {
 
 function loadProfileData() {
     var name = $("#profiles option:selected").text();
-    var url = encodeURI("/api/profiles/" + name);
+    var url = encodeURI("api/profiles/" + name);
 
     $.getJSON(url, function(info) {
         if (info.autostart == 1)
@@ -196,7 +196,7 @@ function addNewProfile() {
 function removeProfile() {
     //console.log("in delete profile");
     var name = $("#profiles option:selected").text();
-    var url = "/api/profiles/" + name;
+    var url = "api/profiles/" + name;
 
     console.log(url);
 
@@ -227,7 +227,7 @@ function toggleServer() {
 
     if (status == "Start") {
         var profile = $("#profiles option:selected").text();
-        var url = "/api/server/start/" + profile;
+        var url = "api/server/start/" + profile;
 
         $.ajax({
             type: 'POST',
@@ -243,7 +243,7 @@ function toggleServer() {
     } else {
         $.ajax({
             type: 'POST',
-            url: "/api/server/stop",
+            url: "api/server/stop",
             success: function() {
                 //console.log("INDI Server stopped!");
                 getStatus();
@@ -260,7 +260,7 @@ function changeAgentMode() {
     var mode = $("input[name='mode']:checked").val();
     $.ajax({
         type: 'POST',
-        url: "/api/indihub/mode/" + mode,
+        url: "api/indihub/mode/" + mode,
         success: function(data) {
             getIndihubStatus();
         },
@@ -272,7 +272,7 @@ function changeAgentMode() {
 }
 
 function getStatus() {
-    $.getJSON("/api/server/status", function(data) {
+    $.getJSON("api/server/status", function(data) {
         if (data[0].status == "True")
             getActiveDrivers();
         else {
@@ -286,7 +286,7 @@ function getStatus() {
 function getIndihubStatus() {
     $.ajax({
         type: "GET",
-        url: "/api/indihub/status",
+        url: "api/indihub/status",
         success: function(data) {
             if (data[0].status != "True") {
                 $("#agent_notify").html("<p class='alert alert-success'>Agent is offline.</p>");
@@ -329,7 +329,7 @@ function getIndihubAgentStatus() {
 }
 
 function getActiveDrivers() {
-    $.getJSON("/api/server/drivers", function(data) {
+    $.getJSON("api/server/drivers", function(data) {
         $("#server_command").html("<span class='glyphicon glyphicon-cog' aria-hidden='true'></span> Stop");
         var msg = "<p class='alert alert-info'>Server is Online.<ul  class=\"list-unstyled\">";
         var counter = 0;
@@ -358,7 +358,7 @@ function getActiveDrivers() {
 function restartDriver(label) {
         $.ajax({
             type: 'POST',
-            url: "/api/drivers/restart/" + label,
+            url: "api/drivers/restart/" + label,
             success: function() {
                 getStatus();
         $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Restarting driver "' + label + '" succeeded.</div>');
@@ -376,7 +376,7 @@ function rebootSystem() {
 
     $.ajax({
         type: 'POST',
-        url: "/api/system/reboot",
+        url: "api/system/reboot",
         success: function(){
             $("#notify_system_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Reboot system succeeded.</div>');
         },
@@ -393,7 +393,7 @@ function poweroffSystem() {
 
     $.ajax({
         type: 'POST',
-        url: "/api/system/poweroff",
+        url: "api/system/poweroff",
         success: function()
         {
             $("#notify_system_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Poweroff system succeeded.</div>');
