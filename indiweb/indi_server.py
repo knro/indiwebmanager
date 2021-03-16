@@ -39,6 +39,7 @@ class IndiServer(object):
         if driver.skeleton:
             cmd += ' -s "%s"' % driver.skeleton
 
+        cmd += ' -n "%s"' % driver.label
         cmd = cmd.replace('"', '\\"')
         full_cmd = 'echo "%s" > %s' % (cmd, self.__fifo)
         logging.info(full_cmd)
