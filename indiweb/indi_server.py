@@ -1,9 +1,11 @@
 #!/usr/bin/python
-
-import os
 import logging
+import os
 from subprocess import call, check_output
-import psutil
+import threading
+
+# Local imports
+from .AsyncSystemCommand import AsyncSystemCommand
 
 INDI_PORT = 7624
 INDI_FIFO = '/tmp/indiFIFO'
@@ -12,14 +14,13 @@ try:
 except KeyError:
     INDI_CONFIG_DIR = '/tmp/indi'
 
-
 class IndiServer(object):
     def __init__(self, fifo=INDI_FIFO, conf_dir=INDI_CONFIG_DIR):
         self.__fifo = fifo
+        self.__sock_path = f"{self.__fifo}_sock"
         self.__conf_dir = conf_dir
-
-        # stop running indiserver, if any
-        self.stop()
+        self.__async_cmd = None
+        self.__command_thread = None
 
     def __clear_fifo(self):
         logging.info("Deleting fifo %s" % self.__fifo)
@@ -27,10 +28,13 @@ class IndiServer(object):
         call(['mkfifo', self.__fifo])
 
     def __run(self, port):
-        cmd = 'indiserver -p %d -m 1000 -v -f %s > /tmp/indiserver.log 2>&1 &' % \
-            (port, self.__fifo)
+        cmd = 'indiserver -p %d -m 1000 -v -f %s -u %s > /tmp/indiserver.log 2>&1' % \
+            (port, self.__fifo, self.__sock_path)
         logging.info(cmd)
-        call(cmd, shell=True)
+        self.__async_cmd = AsyncSystemCommand(cmd)
+        # Run the command asynchronously
+        self.__command_thread = threading.Thread(target=self.__async_cmd.run)
+        self.__command_thread.start()
 
     def start_driver(self, driver):
         # escape quotes if they exist
@@ -50,8 +54,8 @@ class IndiServer(object):
         # escape quotes if they exist
         cmd = 'stop %s' % driver.binary
 
-        if "@" not in driver.binary:
-            cmd += ' -n "%s"' % driver.label
+#        if "@" not in driver.binary:
+        cmd += ' -n "%s"' % driver.label
 
         cmd = cmd.replace('"', '\\"')
         full_cmd = 'echo "%s" > %s' % (cmd, self.__fifo)
@@ -71,19 +75,20 @@ class IndiServer(object):
             self.start_driver(driver)
 
     def stop(self):
-        cmd = ['pkill', '-9', 'indiserver']
-        logging.info(' '.join(cmd))
-        ret = call(cmd)
-        if ret == 0:
-            logging.info('indiserver terminated successfully')
+        # Terminate will also kill the child processes like the drivers
+        try:
+            self.__async_cmd.terminate()
+            self.__command_thread.join()
+        except Exception as e:
+            logging.warn('indi_server: termination failed with error ' + str(e))
         else:
-            logging.warn('terminating indiserver failed code ' + str(ret))
+            logging.info('indi_server: terminated successfully')
 
     def is_running(self):
-        for proc in psutil.process_iter():
-            if proc.name() == 'indiserver':
-                return True
-        return False
+        if self.__async_cmd:
+            return self.__async_cmd.is_running()
+        else:
+            return False
 
     def set_prop(self, dev, prop, element, value):
         cmd = ['indi_setprop', '%s.%s.%s=%s' % (dev, prop, element, value)]
@@ -113,7 +118,5 @@ class IndiServer(object):
             call(command)
 
     def get_running_drivers(self):
-        # drivers = [proc.name() for proc in psutil.process_iter() if
-        #            proc.name().startswith('indi_')]
         drivers = self.__running_drivers
         return drivers
