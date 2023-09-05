@@ -41,13 +41,11 @@ class Database(object):
             # Add autoconnect to profile before 0.1.6
             if result['version'] < '0.1.6':
                 c.execute('ALTER TABLE profile ADD COLUMN autoconnect INTEGER DEFAULT 0')
-                self.__conn.commit()
         except sqlite3.Error:
             pass
 
         try:
             c.execute('UPDATE Version SET version=?', __version__)
-            self.__conn.commit()
         except sqlite3.Error:
             pass
 
