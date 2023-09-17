@@ -143,6 +143,7 @@ class Database(object):
         c = self.__conn.cursor()
         try:
             c.execute('INSERT INTO profile (name) VALUES(?)', (name,))
+            self.__conn.commit()
         except sqlite3.IntegrityError:
             logging.warning("Profile name %s already exists.", name)
         return c.lastrowid

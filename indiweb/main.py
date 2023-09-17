@@ -102,6 +102,7 @@ def start_profile(profile):
     if remote_drivers:
         drivers = remote_drivers['drivers'].split(',')
         for drv in drivers:
+            logging.warning(f"LOADING REMOTE DRIVER drv is {drv}")
             all_drivers.append(DeviceDriver(drv, drv, "1.0", drv, "Remote"))
 
     if all_drivers:
@@ -295,11 +296,24 @@ def start_driver(label):
     indi_server.start_driver(driver)
     logging.info('Driver "%s" started.' % label)
 
+@app.post('/api/drivers/start_remote/<label>')
+def start_remote_driver(label):
+    """Start INDI driver"""
+    driver = DeviceDriver(label, label, "1.0", label, "Remote")
+    indi_server.start_driver(driver)
+    logging.info('Driver "%s" started.' % label)
 
 @app.post('/api/drivers/stop/<label>')
 def stop_driver(label):
     """Stop INDI driver"""
     driver = collection.by_label(label)
+    indi_server.stop_driver(driver)
+    logging.info('Driver "%s" stopped.' % label)
+
+@app.post('/api/drivers/stop_remote/<label>')
+def stop_remote_driver(label):
+    """Stop INDI driver"""
+    driver = DeviceDriver(label, label, "1.0", label, "Remote")
     indi_server.stop_driver(driver)
     logging.info('Driver "%s" stopped.' % label)
 
@@ -367,7 +381,8 @@ def change_indihub_agent_mode(mode):
         response.status = 500
         return json.dumps({'message': 'INDI-server is not running. You need to run INDI-server first.'})
 
-    indihub_agent.stop()
+    if indihub_agent.is_running():
+        indihub_agent.stop()
 
     if mode == 'off':
         return
