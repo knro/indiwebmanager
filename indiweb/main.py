@@ -7,6 +7,7 @@ import argparse
 import socket
 from threading import Timer
 import subprocess
+import platform
 
 from bottle import Bottle, run, template, static_file, request, response, BaseRequest, default_app
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
@@ -270,6 +271,30 @@ def stop_server():
         saved_profile = request.get_cookie("indiserver_profile") or "Simulators"
 
 
+###############################################################################
+# Info endpoints
+###############################################################################
+
+@app.get('/api/info/version')
+def get_version():    
+    return {"version": "1.0"}
+
+
+# Get StellarMate Architecture
+@app.get('/api/info/arch')
+def get_arch():
+    arch = platform.machine()
+    if arch == "aarch64":
+        arch = "arm64"
+    elif arch == "armv7l":
+        arch = "armhf"
+    return arch
+
+# Get Hostname
+@app.get('/api/info/hostname')
+def get_hostname():
+    return {"hostname": socket.gethostname()}
+    
 ###############################################################################
 # Driver endpoints
 ###############################################################################
