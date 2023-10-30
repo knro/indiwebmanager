@@ -8,6 +8,7 @@ import socket
 from threading import Timer
 import subprocess
 import platform
+from importlib_metadata import version
 
 from bottle import Bottle, run, template, static_file, request, response, BaseRequest, default_app
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
@@ -277,7 +278,7 @@ def stop_server():
 
 @app.get('/api/info/version')
 def get_version():    
-    return {"version": "1.0"}
+    return {"version": version("indiweb")}
 
 
 # Get StellarMate Architecture
