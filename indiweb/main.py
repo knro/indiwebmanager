@@ -49,6 +49,8 @@ parser.add_argument('--verbose', '-v', action='store_true',
 parser.add_argument('--logfile', '-l', help='log file name')
 parser.add_argument('--server', '-s', default='standalone',
                     help='HTTP server [standalone|apache] (default: standalone')
+parser.add_argument('--sudo', '-S', action='store_true',                    
+                    help='Run poweroff/reboot commands with sudo')
 
 args = parser.parse_args()
 
@@ -372,7 +374,7 @@ def system_reboot():
     logging.info('System reboot, stopping server...')
     stop_server()
     logging.info('rebooting...')
-    subprocess.call('reboot')
+    subprocess.run("sudo reboot" if args.sudo else "reboot")
 
 
 @app.post('/api/system/poweroff')
@@ -381,7 +383,7 @@ def system_poweroff():
     logging.info('System poweroff, stopping server...')
     stop_server()
     logging.info('poweroff...')
-    subprocess.run("poweroff")
+    subprocess.run("sudo poweroff" if args.sudo else "poweroff")
 
 ###############################################################################
 # INDIHUB Agent control endpoints
