@@ -374,7 +374,7 @@ def system_reboot():
     logging.info('System reboot, stopping server...')
     stop_server()
     logging.info('rebooting...')
-    subprocess.run("sudo reboot" if args.sudo else "reboot")
+    subprocess.run(["sudo", "reboot"] if args.sudo else "reboot")
 
 
 @app.post('/api/system/poweroff')
@@ -383,7 +383,7 @@ def system_poweroff():
     logging.info('System poweroff, stopping server...')
     stop_server()
     logging.info('poweroff...')
-    subprocess.run("sudo poweroff" if args.sudo else "poweroff")
+    subprocess.run(["sudo", "poweroff"] if args.sudo else "poweroff")
 
 ###############################################################################
 # INDIHUB Agent control endpoints
