@@ -25,6 +25,7 @@ class IndiHubAgent(object):
         self.__hostname = hostname
         self.__port = port
         self.__mode = INDIHUB_AGENT_OFF
+        self.__async_cmd = None
 
     def __run(self, profile, mode, conf):
         cmd = 'indihub-agent -indi-server-manager=%s -indi-profile=%s -mode=%s -conf=%s -api-origins=%s > ' \
@@ -45,6 +46,9 @@ class IndiHubAgent(object):
 
     def stop(self):
         # Terminate will also kill the child processes like the drivers
+        if not self.__async_cmd:
+            logging.info('indihub_agent: not running')
+            return
         try:
             self.__async_cmd.terminate()
             self.__command_thread.join()
@@ -54,10 +58,9 @@ class IndiHubAgent(object):
             logging.info('indihub_agent: terminated successfully')
 
     def is_running(self):
-        if self.__async_cmd:
-            return self.__async_cmd.is_running()
-        else:
+        if not self.__async_cmd:
             return False
+        return self.__async_cmd.is_running()
 
     def get_mode(self):
         return self.__mode
