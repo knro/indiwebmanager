@@ -10,7 +10,17 @@ import subprocess
 import platform
 from importlib_metadata import version
 
-from bottle import Bottle, run, template, static_file, request, response, BaseRequest, default_app
+from bottle import (
+    Bottle,
+    run,
+    template,
+    TEMPLATE_PATH,
+    static_file,
+    request,
+    response,
+    BaseRequest,
+    default_app,
+)
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
 from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
 from .database import Database
@@ -26,6 +36,7 @@ BaseRequest.MEMFILE_MAX = 50 * 1024 * 1024
 
 pkg_path, _ = os.path.split(os.path.abspath(__file__))
 views_path = os.path.join(pkg_path, 'views')
+TEMPLATE_PATH.insert(0, views_path)
 
 parser = argparse.ArgumentParser(
     description='INDI Web Manager. '
@@ -139,9 +150,13 @@ def main_form():
         saved_profile = request.get_cookie('indiserver_profile') or 'Simulators'
 
     profiles = db.get_profiles()
-    return template(os.path.join(views_path, 'form.tpl'), profiles=profiles,
-                    drivers=drivers, saved_profile=saved_profile,
-                    hostname=hostname)
+    return template(
+        "form.tpl",
+        profiles=profiles,
+        drivers=drivers,
+        saved_profile=saved_profile,
+        hostname=hostname,
+    )
 
 ###############################################################################
 # Profile endpoints
