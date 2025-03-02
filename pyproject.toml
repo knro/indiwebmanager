@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta" 
+
+[tool.setuptools]
+packages = ["indiweb"]
+include-package-data = true
+
+[project]
+name = "indiweb"
+version = "0.2.0"
+authors = [
+  { name="Jasem Mutlaq", email="mutlaqja@ikarustech.com" },
+  { name="Juan Menendez", email="juanmb@gmail.com" }
+]
+description = "A simple web application to manage INDI server"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "LGPL"}
+classifiers = [
+    'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
+    'Natural Language :: English',
+    'Programming Language :: Python',
+    'Operating System :: OS Independent',
+    'Intended Audience :: Science/Research',
+    'Topic :: Scientific/Engineering :: Astronomy',
+]
+dependencies = [
+    "requests==2.32.2",
+    "psutil==6.0.0",
+    "bottle==0.12.25",
+    "importlib_metadata==8.5.0"
+]
+
+[project.scripts]
+indi-web = "indiweb.main:main"
+
+[project.urls]
+"Homepage" = "http://www.indilib.org/"
+
+[tool.flake8]
+ignore = ["W503", "E124", "E128", "E127", "E712"]
+max-line-length = 140

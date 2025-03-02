@@ -124,54 +124,6 @@
   <br />
   <br />
 
-  <div class="container">
-    <h4>INDIHUB Network Agent Control <a href="https://indihub.space" target="_blank"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a></h4>
-    <div class="row">
-      <div class="col-sm-6">
-          <label>Agent Mode:</label>
-          <div class="form-check">
-              <span data-toggle="tooltip" title="Agent is not running">
-                  <input class="form-check-input" type="radio" name="mode" id="mode_off" value="off" checked>
-                  <label class="form-check-label" for="mode_off">
-                      Off
-                  </label>
-              </span>
-          </div>
-          <div class="form-check">
-              <span data-toggle="tooltip" title="Equipment sharing is not available, contribute images">
-                  <input class="form-check-input" type="radio" name="mode" id="mode_solo" value="solo">
-                  <label class="form-check-label" for="mode_solo">
-                      Solo
-                  </label>
-              </span>
-          </div>
-          <div class="form-check">
-              <span data-toggle="tooltip" title="Share your equipment and open remote access to your guests">
-                  <input class="form-check-input" type="radio" name="mode" id="mode_share" value="share">
-                  <label class="form-check-label" for="mode_share">
-                      Share
-                  </label>
-              </span>
-          </div>
-          <div class="form-check">
-              <span data-toggle="tooltip" title="Your equipment is operated by smart scheduler in the cloud">
-                  <input class="form-check-input" type="radio" name="mode" id="mode_robotic" value="robotic">
-                  <label class="form-check-label" for="mode_robotic">
-                      Robotic
-                  </label>
-              </span>
-          </div>
-          <button id="agent_command" onClick="changeAgentMode()" class="btn btn-default"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> Change Mode</button>
-      </div>
-      <div class="col-sm-6">
-        <div class="form-group">
-          <label>Agent Status</label>
-          <div id="agent_notify" class="well">Off</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
 
 <script src="static/js/jquery.min.js"></script>
 <script src="static/js/bootstrap.min.js"></script>

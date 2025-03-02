@@ -41,6 +41,11 @@ class Database(object):
             # Add autoconnect to profile before 0.1.6
             if result['version'] < '0.1.6':
                 c.execute('ALTER TABLE profile ADD COLUMN autoconnect INTEGER DEFAULT 0')
+            # Add scripts column to profile
+            try:
+                c.execute('SELECT scripts FROM profile LIMIT 1')
+            except sqlite3.Error:
+                c.execute('ALTER TABLE profile ADD COLUMN scripts TEXT DEFAULT NULL')
         except sqlite3.Error:
             pass
 
@@ -78,7 +83,8 @@ class Database(object):
                   'profile (id INTEGER PRIMARY KEY AUTOINCREMENT,'
                   'name TEXT UNIQUE, port INTEGER DEFAULT 7624, '
                   'autostart INTEGER DEFAULT 0, '
-                  'autoconnect INTEGER DEFAULT 0)')
+                  'autoconnect INTEGER DEFAULT 0, '
+                  'scripts TEXT DEFAULT NULL)')
         c.execute('UPDATE Version SET version=?', (__version__,))
 
         self.__conn.commit()
@@ -125,7 +131,7 @@ class Database(object):
         cursor = self.__conn.execute(
             'SELECT drivers FROM remote '
             'WHERE profile=(SELECT id FROM profile WHERE name=?)', (name,))
-        return cursor.fetchone()
+        return cursor.fetchall()
 
     def delete_profile(self, name):
         """Delete Profile"""
@@ -155,15 +161,15 @@ class Database(object):
                                      (name,))
         return cursor.fetchone()
 
-    def update_profile(self, name, port, autostart=False, autoconnect=False):
+    def update_profile(self, name, port, autostart=False, autoconnect=False, scripts=""):
         """Update profile info"""
 
         c = self.__conn.cursor()
         if autostart:
             # If we have a profile with autostart=1, reset everyone else to 0
             c.execute('UPDATE profile SET autostart=0')
-        c.execute('UPDATE profile SET port=?, autostart=?, autoconnect=? WHERE name=?',
-                  (port, autostart, autoconnect, name))
+        c.execute('UPDATE profile SET port=?, autostart=?, autoconnect=?, scripts=? WHERE name=?',
+                  (port, autostart, autoconnect, scripts, name))
         self.__conn.commit()
         c.close()
 

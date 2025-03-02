@@ -1,9 +1,6 @@
 # INDI Web Manager
 
-INDI Web Manager is a simple Web Application to manage:
-
-- [INDI](http://www.indilib.org) Server
-- [INDIHUB](https://indihub.space) Agent
+INDI Web Manager is a simple Web Application to manage [INDI](http://www.indilib.org) Server.
 
 It supports multiple driver profiles
 along with optional custom remote drivers. It can be used to start INDI server
@@ -71,14 +68,15 @@ the server is up and running.
 
 # Start vs. Connect
 
-What is the difference between *starting* a driver and *connecting* a driver?
+What is the difference between _starting_ a driver and _connecting_ a driver?
+
 - Start: The INDI server executes the driver. The driver starts up and provide a list of properties. It does not establish connection with the physical device.
 - Connect: Establish connection to the physical device.
 
 # Systemd configuration
 
-The provided file `indiwebmanager.service` is an example *systemd service file*
-that can be used to run `indi-web` at startup as *pi* user. If your username is different
+The provided file `indiwebmanager.service` is an example _systemd service file_
+that can be used to run `indi-web` at startup as _pi_ user. If your username is different
 please edit the file and change the username first.
 
 Indiwebmanager must be installed system-wide:
@@ -118,7 +116,7 @@ If all appears OK, you can start using the Web Application using any browser.
 # Profiles
 
 The Web Application provides a default profile to run simulator drivers. To use
-a new profile, add the profile name and then click  the plus button. Next,
+a new profile, add the profile name and then click the plus button. Next,
 select which drivers to run under this particular profile. After selecting the
 drivers, click the **Save** icon to save all your changes. To enable automatic
 startup of INDI server for a particular profile when the device boots up or
@@ -135,18 +133,18 @@ the hostname:port running the INDI Web Manager.
 
 ### Get Server Status
 
- URL | Method | Return | Format
---- | --- | --- | ---
-/api/server/status | GET | INDI server status (running or not) | {'server': bool, 'active_profile': profile_name}
+| URL                | Method | Return                              | Format                                           |
+| ------------------ | ------ | ----------------------------------- | ------------------------------------------------ |
+| /api/server/status | GET    | INDI server status (running or not) | {'server': bool, 'active_profile': profile_name} |
 
 **Example:** curl http://localhost:8624/api/server/status
 **Reply:** [{"status": "False"}, {"active_profile": ""}]
 
 ### Start Server
 
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/server/\<name>/start | POST | None | []
+| URL                       | Method | Return | Format |
+| ------------------------- | ------ | ------ | ------ |
+| /api/server/\<name>/start | POST   | None   | []     |
 
 Where name is the equipment profile name to start.
 
@@ -154,16 +152,19 @@ Where name is the equipment profile name to start.
 **Reply:** None
 
 ### Stop Server
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/server/stop | POST | None | []
+
+| URL              | Method | Return | Format |
+| ---------------- | ------ | ------ | ------ |
+| /api/server/stop | POST   | None   | []     |
 
 ### Get running drivers list
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/server/drivers | GET | Returns an array for all the locally **running** drivers
+
+| URL                 | Method | Return                                                   | Format |
+| ------------------- | ------ | -------------------------------------------------------- | ------ |
+| /api/server/drivers | GET    | Returns an array for all the locally **running** drivers |
 
 The format is as following:
+
 - **Name**: Driver name. If no label is specified, the driver uses this default name.
 - **Label**: If specified, set the driver name to this label.
 - **Skeleton**: XML Skeleton path which is used by some drivers (e.g. EQMod)
@@ -178,9 +179,10 @@ The format is as following:
 ## Profiles
 
 ### Add new profile
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/profiles/\<name> | POST | None | None
+
+| URL                   | Method | Return | Format |
+| --------------------- | ------ | ------ | ------ |
+| /api/profiles/\<name> | POST   | None   | None   |
 
 To add a profile named **foo**:
 
@@ -189,9 +191,10 @@ curl -H "Content-Type: application/json" -X POST http://localhost:8624/api/profi
 ```
 
 ### Delete profile
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/profiles/\<name> | DELETE | None | None
+
+| URL                   | Method | Return | Format |
+| --------------------- | ------ | ------ | ------ |
+| /api/profiles/\<name> | DELETE | None   | None   |
 
 To delete a profile named **foo**:
 
@@ -201,39 +204,41 @@ curl -X DELETE http://localhost:8624/api/profiles/foo
 
 ### Get All Profiles
 
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/profiles | GET | Returns all profiles | [{"port": number, "id": ID, "autostart": number, "name": profile_name}, ...]
+| URL           | Method | Return               | Format                                                                       |
+| ------------- | ------ | -------------------- | ---------------------------------------------------------------------------- |
+| /api/profiles | GET    | Returns all profiles | [{"port": number, "id": ID, "autostart": number, "name": profile_name}, ...] |
 
 **Example:** curl http://localhost:8624/api/profiles
 **Reply:** [{"port": 7624, "id": 1, "autostart": 0, "autoconnect": 0, "name": "Simulators"}, {"port": 7624, "id": 2, "autostart": 0, "name": "EQ5"}]
 
 ### Get One Profile
 
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/profiles/\<name> | GET | Returns one Profile
+| URL                   | Method | Return              | Format |
+| --------------------- | ------ | ------------------- | ------ |
+| /api/profiles/\<name> | GET    | Returns one Profile |
 
 **Example:** curl http://localhost:8624/api/profiles/Simulators
 **Reply:** {"id": 1, "name": "Simulators", "port": 7624, "autostart": 0, "autoconnect": 0}
 
 ### Update One Profile
 
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/profiles/\<name> | PUT | Update profile info (port, autostar, autoconnect)
+| URL                   | Method | Return                                            | Format |
+| --------------------- | ------ | ------------------------------------------------- | ------ |
+| /api/profiles/\<name> | PUT    | Update profile info (port, autostar, autoconnect) |
 
 **Example:** curl -H 'Content-Type: application/json' -X PUT -d '{"port":9000,"autostart":1,"autoconnect":0}' http://localhost:8624/api/profiles/Simulators
 **Reply:** None
 
 ### Save drivers to profile
 
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/profiles/\<name>/drivers | POST | Save local and remote drivers to a profile. 
+| URL                           | Method | Return                                      | Format |
+| ----------------------------- | ------ | ------------------------------------------- | ------ |
+| /api/profiles/\<name>/drivers | POST   | Save local and remote drivers to a profile. |
+
 If profile does not exist, it is created. It expects an array of drivers.
-- Local drivers must define the *label* attribute.
-- Remote drivers must define the *remote* attribute.
+
+- Local drivers must define the _label_ attribute.
+- Remote drivers must define the _remote_ attribute.
 
 For example:
 [{"label":"Pegasus UPB"},{"remote":"astrometry@myremoteobservatory.com"}]
@@ -246,27 +251,27 @@ To add the drivers above to a profile named **My Obs**, we call the following.
 
 ### List all Groups
 
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/drivers/groups | GET | Get the driver categories
+| URL                 | Method | Return                    | Format |
+| ------------------- | ------ | ------------------------- | ------ |
+| /api/drivers/groups | GET    | Get the driver categories |
 
 **Example:** curl http://localhost:8624/api/drivers/groups
 **Reply:** ["Adaptive Optics", "Agent", "Auxiliary", "CCDs", "Detectors", "Domes", "Filter Wheels", "Focusers", "Spectrographs", "Telescopes", "Weather"]
 
 ### List all drivers
 
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/drivers | GET | Get all the drivers information
+| URL          | Method | Return                          | Format |
+| ------------ | ------ | ------------------------------- | ------ |
+| /api/drivers | GET    | Get all the drivers information |
 
 **Example:** curl http://localhost:8624/api/drivers
 **Reply:** [{"name": "AAG Cloud Watcher", "label": "AAG Cloud Watcher", "skeleton": null, "version": "1.4", "binary": "indi_aagcloudwatcher", "family": "Weather", "custom": false}, {"name": "ASI EFW", "label": "ASI EFW", "skeleton": null, "version": "0.9", "binary": "indi_asi_wheel", "family": "Filter Wheels", "custom": false}.....]
 
 ### Start specific driver
 
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/drivers/start/\<label>| POST | Start a specific driver if INDI server is already running.
+| URL                         | Method | Return                                                     | Format |
+| --------------------------- | ------ | ---------------------------------------------------------- | ------ |
+| /api/drivers/start/\<label> | POST   | Start a specific driver if INDI server is already running. |
 
 All spaces must be encoded with %20 as per URI standards.
 
@@ -275,9 +280,9 @@ All spaces must be encoded with %20 as per URI standards.
 
 ### Stop specific driver
 
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/drivers/stop/\<label>| POST | Stop a specific driver if INDI server is already running.
+| URL                        | Method | Return                                                    | Format |
+| -------------------------- | ------ | --------------------------------------------------------- | ------ |
+| /api/drivers/stop/\<label> | POST   | Stop a specific driver if INDI server is already running. |
 
 All spaces must be encoded with %20 as per URI standards.
 
@@ -286,62 +291,33 @@ All spaces must be encoded with %20 as per URI standards.
 
 ### Restart specific driver
 
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/drivers/restart/\<label>| POST | Restart a specific driver if INDI server is already running.
+| URL                           | Method | Return                                                       | Format |
+| ----------------------------- | ------ | ------------------------------------------------------------ | ------ |
+| /api/drivers/restart/\<label> | POST   | Restart a specific driver if INDI server is already running. |
 
 All spaces must be encoded with %20 as per URI standards.
 
 **Example:** http://localhost:8624/api/drivers/restart/Pegasus%20UPB
 **Reply:** None
 
-## INDIHUB Agent Methods
-
-### Change indihub-agent current mode
-
-You can launch [indihub-agent](https://github.com/indihub-space/agent) in three different modes or stop it with using this endpoint.
-
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/indihub/mode/\<mode>| POST | Change indihub-agent to run in a specific mode if INDI server is already running.
-
-Possible values for URI-parameter `mode`:
-- `solo`
-- `share`
-- `robotic`
-- or `off` to stop indihub-agent process
-
-**Example:** curl -X POST /api/indihub/mode/solo
-**Reply:** None
-
-### Get indihub-agent status
-
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/indihub/status | GET | Get status of `indihub-agent`
-
-**Example:** curl /api/indihub/status
-
-**Reply:** [{'status': 'True', 'mode': 'solo', 'active_profile': 'my-profile'}]
-
 ## System Commands
 
-### Reboot the system 
+### Reboot the system
 
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/system/reboot| POST | Reboot the system on which the INDI server is running.
+| URL                | Method | Return                                                 | Format |
+| ------------------ | ------ | ------------------------------------------------------ | ------ |
+| /api/system/reboot | POST   | Reboot the system on which the INDI server is running. |
 
 The driver and indi server are closed.
 
 **Example:** http://localhost:8624/api/system/reboot
 **Reply:** None
 
-### Poweroff the system 
+### Poweroff the system
 
-URL | Method | Return | Format
---- | --- | --- | ---
-/api/system/poweroff| POST | powers off the system on which the INDI server is running.
+| URL                  | Method | Return                                                     | Format |
+| -------------------- | ------ | ---------------------------------------------------------- | ------ |
+| /api/system/poweroff | POST   | powers off the system on which the INDI server is running. |
 
 The driver and indi server are closed.
 

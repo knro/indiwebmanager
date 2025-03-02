@@ -1,24 +1,26 @@
 // Startup function
-$(function()
+$(function ()
 {
     $('[data-toggle="tooltip"]').tooltip();
 
     loadCurrentProfileDrivers();
     getStatus();
-    getIndihubStatus();
 
-    $("#drivers_list").change(function() {
+    $("#drivers_list").change(function ()
+    {
         var name = $("#profiles option:selected").text();
         saveProfileDrivers(name, true);
     });
 
-    $("#remote_drivers").change(function() {
+    $("#remote_drivers").change(function ()
+    {
         var name = $("#profiles option:selected").text();
         saveProfileDrivers(name, true);
     });
 });
 
-function saveProfile() {
+function saveProfile()
+{
     var options = profiles.options;
     var name = options[options.selectedIndex].value;
     // Remove any extra spaces
@@ -31,17 +33,20 @@ function saveProfile() {
     $.ajax({
         type: 'POST',
         url: encodeURI(url),
-        success: function() {
+        success: function ()
+        {
             //console.log("add new a profile " + name);
             saveProfileDrivers(name);
         },
-        error: function() {
+        error: function ()
+        {
             alert('error add new  profile failed');
         }
     });
 }
 
-function saveProfileInfo() {
+function saveProfileInfo()
+{
     var options = profiles.options;
     var name = options[options.selectedIndex].value;
     console.log(name);
@@ -68,23 +73,27 @@ function saveProfileInfo() {
         url: encodeURI(url),
         data: profileInfo,
         contentType: "application/json; charset=utf-8",
-        success: function() {
+        success: function ()
+        {
             console.log("Profile " + name + " info is updated");
         },
-        error: function() {
+        error: function ()
+        {
             alert('error update profile info failed');
         }
     });
 }
 
-function saveProfileDrivers(profile, silent) {
+function saveProfileDrivers(profile, silent)
+{
 
-    if (typeof(silent) === 'undefined') silent = false;
+    if (typeof (silent) === 'undefined') silent = false;
 
     var url = "api/profiles/" + profile + "/drivers";
     var drivers = [];
 
-    $("#drivers_list :selected").each(function(i, sel) {
+    $("#drivers_list :selected").each(function (i, sel)
+    {
         drivers.push({
             "label": $(sel).text()
         });
@@ -92,7 +101,8 @@ function saveProfileDrivers(profile, silent) {
 
     // Check for remote drivers
     var remote = $("#remote_drivers").val();
-    if (remote) {
+    if (remote)
+    {
         drivers.push({
             "remote": remote
         });
@@ -110,25 +120,30 @@ function saveProfileDrivers(profile, silent) {
         url: encodeURI(url),
         data: drivers,
         contentType: "application/json; charset=utf-8",
-        success: function() {
+        success: function ()
+        {
             //console.log("Drivers added successfully to profile");
             if (silent === false)
                 $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Profile ' + profile + ' saved.</div>');
         },
-        error: function() {
+        error: function ()
+        {
             alert('error failed to add drivers to profile');
         }
     });
 }
 
-function loadCurrentProfileDrivers() {
+function loadCurrentProfileDrivers()
+{
     clearDriverSelection();
 
     var name = $("#profiles option:selected").text();
     var url = "api/profiles/" + name + "/labels";
 
-    $.getJSON(url, function(drivers) {
-        $.each(drivers, function(i, driver) {
+    $.getJSON(url, function (drivers)
+    {
+        $.each(drivers, function (i, driver)
+        {
             var label = driver.label;
             //console.log("Driver label is " + label);
             var selector = "#drivers_list [value='" + label + "']";
@@ -140,11 +155,28 @@ function loadCurrentProfileDrivers() {
 
     url = encodeURI("api/profiles/" + name + "/remote");
 
-    $.getJSON(url, function(data) {
-        if (data && data.drivers !== undefined) {
+    $.getJSON(url, function (data)
+    {
+        if (data && data.length > 0)
+        {
+            // Handle array of remote drivers
+            var remoteDrivers = [];
+            for (var i = 0; i < data.length; i++)
+            {
+                if (data[i].drivers)
+                {
+                    remoteDrivers.push(data[i].drivers);
+                }
+            }
+            $("#remote_drivers").val(remoteDrivers.join(","));
+        }
+        else if (data && data.drivers !== undefined)
+        {
+            // Handle single remote driver
             $("#remote_drivers").val(data.drivers);
         }
-        else {
+        else
+        {
             $("#remote_drivers").val("");
         }
     });
@@ -153,11 +185,13 @@ function loadCurrentProfileDrivers() {
 
 }
 
-function loadProfileData() {
+function loadProfileData()
+{
     var name = $("#profiles option:selected").text();
     var url = encodeURI("api/profiles/" + name);
 
-    $.getJSON(url, function(info) {
+    $.getJSON(url, function (info)
+    {
         if (info.autostart == 1)
             $("#profile_auto_start").prop("checked", true);
         else
@@ -173,7 +207,8 @@ function loadProfileData() {
     });
 }
 
-function clearDriverSelection() {
+function clearDriverSelection()
+{
     $("#drivers_list option").prop('selected', false);
     $("#drivers_list").selectpicker('refresh');
     // Uncheck Auto Start
@@ -181,9 +216,11 @@ function clearDriverSelection() {
     $("#profile_port").val("7624");
 }
 
-function addNewProfile() {
+function addNewProfile()
+{
     var profile_name = $("#new_profile_name").val();
-    if (profile_name) {
+    if (profile_name)
+    {
         //console.log("profile is " + profile_name);
         $("#profiles").append("<option id='" + profile_name + "' selected>" + profile_name + "</option>");
 
@@ -193,14 +230,16 @@ function addNewProfile() {
     }
 }
 
-function removeProfile() {
+function removeProfile()
+{
     //console.log("in delete profile");
     var name = $("#profiles option:selected").text();
     var url = "api/profiles/" + name;
 
     console.log(url);
 
-    if ($("#profiles option").size() == 1) {
+    if ($("#profiles option").size() == 1)
+    {
         $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Cannot delete default profile.</div>');
         return;
     }
@@ -208,7 +247,8 @@ function removeProfile() {
     $.ajax({
         type: 'DELETE',
         url: encodeURI(url),
-        success: function() {
+        success: function ()
+        {
             //console.log("delete profile " + name);
             $("#profiles option:selected").remove();
             $("#profiles").selectpicker('refresh');
@@ -216,66 +256,61 @@ function removeProfile() {
 
             $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Profile ' + name + ' deleted.</div>');
         },
-        error: function() {
+        error: function ()
+        {
             alert('error delete profile failed');
         }
     });
 }
 
-function toggleServer() {
+function toggleServer()
+{
     var status = $.trim($("#server_command").text());
 
-    if (status == "Start") {
+    if (status == "Start")
+    {
         var profile = $("#profiles option:selected").text();
         var url = "api/server/start/" + profile;
 
         $.ajax({
             type: 'POST',
             url: encodeURI(url),
-            success: function() {
+            success: function ()
+            {
                 //console.log("INDI Server started!");
                 getStatus();
             },
-            error: function() {
+            error: function ()
+            {
                 alert('Failed to start INDI server.');
             }
         });
-    } else {
+    } else
+    {
         $.ajax({
             type: 'POST',
             url: "api/server/stop",
-            success: function() {
+            success: function ()
+            {
                 //console.log("INDI Server stopped!");
                 getStatus();
-                getIndihubStatus(); // when INDI-server stops - INDIHUB-agent stops as well
             },
-            error: function() {
+            error: function ()
+            {
                 alert('Failed to stop INDI server.');
             }
         });
     }
 }
 
-function changeAgentMode() {
-    var mode = $("input[name='mode']:checked").val();
-    $.ajax({
-        type: 'POST',
-        url: "api/indihub/mode/" + mode,
-        success: function(data) {
-            getIndihubStatus();
-        },
-        error: function(xhr, status, error) {
-            alert('Failed to change INDIHUB Agent mode: ' + xhr.responseJSON.message);
-            getIndihubStatus();
-        }
-    });
-}
-
-function getStatus() {
-    $.getJSON("api/server/status", function(data) {
+function getStatus()
+{
+    $.getJSON("api/server/status", function (data)
+    {
         if (data[0].status == "True")
             getActiveDrivers();
-        else {
+        else
+        {
             $("#server_command").html("<span class='glyphicon glyphicon-cog' aria-hidden='true'></span> Start");
             $("#server_notify").html("<p class='alert alert-success'>Server is offline.</p>");
         }
@@ -283,62 +318,21 @@ function getStatus() {
     });
 }
 
-function getIndihubStatus() {
-    $.ajax({
-        type: "GET",
-        url: "api/indihub/status",
-        success: function(data) {
-            if (data[0].status != "True") {
-                $("#agent_notify").html("<p class='alert alert-success'>Agent is offline.</p>");
-                $("#mode_off").prop('checked', true);
-                return;
-            }
-            var msg = "<p class='alert alert-info'>Agent is Online in " + data[0].mode +"-mode</p>";
-            $("#agent_notify").html(msg);
-            $("#mode_"+ data[0].mode).prop('checked', true);
 
-            // for share-mode: get extended status info with public endpoints
-            if (data[0].mode == "share") {
-                // optimistically - agent should be running and listening in no more than 3 sec
-                // (users can always refresh the page to get Agent status loaded)
-                setTimeout(getIndihubAgentStatus, 3000);
-            }
-        }
-    });
-}
-
-function getIndihubAgentStatus() {
-    $.ajax({
-        type: "GET",
-        url: "http://" + document.location.hostname + ":2020/status",
-        success: function(data) {
-            var msg = $("#agent_notify").html();
-            if (data.mode == "share") {
-                msg += "<ul>";
-                for (var i = 0; i < data.publicEndpoints.length; i++) {
-                    msg += "<li>" + data.publicEndpoints[i].name + ": <b>" + data.publicEndpoints[i].addr + "</b></li>";
-                }
-                msg += "</ul>";
-            }
-            $("#agent_notify").html(msg);
-        },
-        error: function(xhr, status, error) {
-            alert("Could not load Agent data, please try to refresh the page!");
-        }
-    });
-}
-
-function getActiveDrivers() {
-    $.getJSON("api/server/drivers", function(data) {
+function getActiveDrivers()
+{
+    $.getJSON("api/server/drivers", function (data)
+    {
         $("#server_command").html("<span class='glyphicon glyphicon-cog' aria-hidden='true'></span> Stop");
         var msg = "<p class='alert alert-info'>Server is Online.<ul  class=\"list-unstyled\">";
         var counter = 0;
-        $.each(data, function(i, field) {
+        $.each(data, function (i, field)
+        {
             msg += "<li>" + "<button class=\"btn btn-xs\" " +
-        "onCLick=\"restartDriver('" + field.label + "')\" data-toggle=\"tooltip\" " +
-        "title=\"Restart Driver\">" +
-        "<span class=\"glyphicon glyphicon-repeat\" aria-hidden=\"true\"></span></button> " +
-        field.label + "</li>";
+                "onCLick=\"restartDriver('" + field.label + "')\" data-toggle=\"tooltip\" " +
+                "title=\"Restart Driver\">" +
+                "<span class=\"glyphicon glyphicon-repeat\" aria-hidden=\"true\"></span></button> " +
+                field.label + "</li>";
             counter++;
         });
 
@@ -346,7 +340,8 @@ function getActiveDrivers() {
 
         $("#server_notify").html(msg);
 
-        if (counter < $("#drivers_list :selected").size()) {
+        if (counter < $("#drivers_list :selected").size())
+        {
             $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Not all profile drivers are running. Make sure all devices are powered and connected.</div>');
             return;
         }
@@ -355,50 +350,59 @@ function getActiveDrivers() {
 }
 
 
-function restartDriver(label) {
-        $.ajax({
-            type: 'POST',
-            url: "api/drivers/restart/" + label,
-            success: function() {
-                getStatus();
-        $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Restarting driver "' + label + '" succeeded.</div>');
-            },
-            error: function() {
-                alert('Restarting driver "' + label + '" failed!');
-            }
-        });
- }
+function restartDriver(label)
+{
+    $.ajax({
+        type: 'POST',
+        url: "api/drivers/restart/" + label,
+        success: function ()
+        {
+            getStatus();
+            $("#notify_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Restarting driver "' + label + '" succeeded.</div>');
+        },
+        error: function ()
+        {
+            alert('Restarting driver "' + label + '" failed!');
+        }
+    });
+}
 
-function rebootSystem() {
-    if (!confirm("Please press OK to confirm remote system Reboot")) {
+function rebootSystem()
+{
+    if (!confirm("Please press OK to confirm remote system Reboot"))
+    {
         return;
     }
 
     $.ajax({
         type: 'POST',
         url: "api/system/reboot",
-        success: function(){
+        success: function ()
+        {
             $("#notify_system_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Reboot system succeeded.</div>');
         },
-        error: function(){
+        error: function ()
+        {
             alert('Rebooting system failed!');
         }
     });
 }
 
-function poweroffSystem() {
-    if (!confirm("Please press OK to confirm remote system Poweroff")) {
+function poweroffSystem()
+{
+    if (!confirm("Please press OK to confirm remote system Poweroff"))
+    {
         return;
     }
 
     $.ajax({
         type: 'POST',
         url: "api/system/poweroff",
-        success: function()
+        success: function ()
         {
             $("#notify_system_message").html('<br/><div class="alert alert-success"><a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>Poweroff system succeeded.</div>');
         },
-        error: function()
+        error: function ()
         {
             alert('Poweroff remote system failed!');
         }

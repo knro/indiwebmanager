@@ -25,7 +25,6 @@ from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
 from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
 from .database import Database
 from .device import Device
-from .indihub_agent import IndiHubAgent
 
 # default settings
 WEB_HOST = '0.0.0.0'
@@ -88,7 +87,6 @@ collection = DriverCollection(args.xmldir)
 indi_server = IndiServer(args.fifo, args.conf)
 indi_device = Device()
 
-indihub_agent = IndiHubAgent('%s:%d' % (args.host, args.port), hostname, args.port)
 
 db_path = os.path.join(args.conf, 'profiles.db')
 db = Database(db_path)
@@ -110,15 +108,45 @@ def start_profile(profile):
     info = db.get_profile(profile)
 
     profile_drivers = db.get_profile_drivers_labels(profile)
-    all_drivers = [collection.by_label(d['label']) for d in profile_drivers]
+    if info.get('scripts'):
+        try:
+            profile_scripts = json.loads(info['scripts'])
+            for one_script in profile_scripts:
+                one_driver = collection.by_label(one_script['Driver'])
+                if one_driver:
+                    one_driver.rule = one_script
+        except json.JSONDecodeError:
+            logging.warning("Failed to parse scripts JSON for profile %s" % profile)
+        except Exception as e:
+            logging.warning("Error processing scripts for profile %s: %s" % (profile, str(e)))
+    
+    all_drivers = []
+    
+    for d in profile_drivers:
+        logging.debug("Finding driver with label: " + d['label'])
+        one_driver = collection.by_label(d['label'])
+        if one_driver is None:
+            logging.warning("Driver " + d['label'] + " is not found on the system. Install the driver.")
+        else:
+            logging.info("Adding local driver: " + d['label'])
+            all_drivers.append(one_driver)
 
     # Find if we have any remote drivers
     remote_drivers = db.get_profile_remote_drivers(profile)
     if remote_drivers:
-        drivers = remote_drivers['drivers'].split(',')
-        for drv in drivers:
-            logging.warning(f"LOADING REMOTE DRIVER drv is {drv}")
-            all_drivers.append(DeviceDriver(drv, drv, "1.0", drv, "Remote"))
+        # Handle both single dictionary and list of dictionaries
+        if isinstance(remote_drivers, list):
+            for remote_driver in remote_drivers:
+                driver = remote_driver['drivers']
+                one_driver = DeviceDriver(driver, driver, "1.0", driver, "Remote")
+                logging.info("Adding remote driver: " + driver)
+                all_drivers.append(one_driver)
+        else:
+            # Handle the case where remote_drivers is a single dictionary
+            drivers = remote_drivers['drivers'].split(',')
+            for drv in drivers:
+                logging.warning(f"LOADING REMOTE DRIVER drv is {drv}")
+                all_drivers.append(DeviceDriver(drv, drv, "1.0", drv, "Remote"))
 
     if all_drivers:
         indi_server.start(info['port'], all_drivers)
@@ -191,14 +219,15 @@ def delete_profile(name):
 
 @app.put('/api/profiles/<name>')
 def update_profile(name):
-    """Update profile info (port & autostart & autoconnect)"""
+    """Update profile info (port & autostart & autoconnect & scripts)"""
     response.set_cookie("indiserver_profile", name,
                         None, max_age=3600000, path='/')
     data = request.json
     port = data.get('port', args.indi_port)
+    scripts = data.get('scripts', "")
     autostart = bool(data.get('autostart', 0))
     autoconnect = bool(data.get('autoconnect', 0))
-    db.update_profile(name, port, autostart, autoconnect)
+    db.update_profile(name, port, autostart, autoconnect, scripts)
 
 
 @app.post('/api/profiles/<name>/drivers')
@@ -277,7 +306,6 @@ def start_server(profile):
 @app.post('/api/server/stop')
 def stop_server():
     """Stop INDI Server"""
-    indihub_agent.stop()
     indi_server.stop()
 
     global active_profile
@@ -399,38 +427,6 @@ def system_poweroff():
     stop_server()
     logging.info('poweroff...')
     subprocess.run(["sudo", "poweroff"] if args.sudo else "poweroff")
-
-###############################################################################
-# INDIHUB Agent control endpoints
-###############################################################################
-
-
-@app.get('/api/indihub/status')
-def get_indihub_status():
-    """INDIHUB Agent status"""
-    mode = indihub_agent.get_mode()
-    is_running = indihub_agent.is_running()
-    response.content_type = 'application/json'
-    status = [{'status': str(is_running), 'mode': mode, 'active_profile': active_profile}]
-    return json.dumps(status)
-
-
-@app.post('/api/indihub/mode/<mode>')
-def change_indihub_agent_mode(mode):
-    """Change INDIHUB Agent mode with a current INDI-profile"""
-
-    if active_profile == "" or not indi_server.is_running():
-        response.content_type = 'application/json'
-        response.status = 500
-        return json.dumps({'message': 'INDI-server is not running. You need to run INDI-server first.'})
-
-    if indihub_agent.is_running():
-        indihub_agent.stop()
-
-    if mode == 'off':
-        return
-
-    indihub_agent.start(active_profile, mode)
 
 
 ###############################################################################

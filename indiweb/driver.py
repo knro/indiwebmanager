@@ -19,6 +19,8 @@ class DeviceDriver:
         self.binary = binary
         self.family = family
         self.custom = custom
+        self.rule = ""
+        self.role = ""
 
 
 class DriverCollection:
@@ -75,11 +77,14 @@ class DriverCollection:
         self.drivers = list(filter(lambda driver: driver.custom is not True, self.drivers))
 
     def by_label(self, label):
+        # Try first an exact match
         for driver in self.drivers:
-            if (driver.label == label):
+            if driver.label == label:
                 return driver
-
-        return None
+        # Try second as partial match
+        for driver in self.drivers:
+            if label.startswith(driver.label):
+                return driver
 
     def by_name(self, name):
         for driver in self.drivers:
