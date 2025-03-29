@@ -11,7 +11,7 @@ INDI_DATA_DIR = os.environ.get('INDI_DATA_DIR', "/usr/share/indi/")
 class DeviceDriver:
     """Device driver container"""
 
-    def __init__(self, name, label, version, binary, family, skel=None, custom=False):
+    def __init__(self, name, label, version, binary, family, skel=None, custom=False, rule=None):
         self.name = name
         self.label = label
         self.skeleton = skel
@@ -19,7 +19,7 @@ class DeviceDriver:
         self.binary = binary
         self.family = family
         self.custom = custom
-        self.rule = ""
+        self.rule = rule
         self.role = ""
 
 
@@ -56,7 +56,7 @@ class DriverCollection:
 
                         skel_file = os.path.join(self.path, skel) if skel else None
                         driver = DeviceDriver(name, label, version,
-                                              binary, family, skel_file)
+                                              binary, family, skel_file, False, None)
                         self.drivers.append(driver)
 
             except KeyError as e:
@@ -70,7 +70,7 @@ class DriverCollection:
     def parse_custom_drivers(self, drivers):
         for custom in drivers:
             driver = DeviceDriver(custom['name'], custom['label'], custom['version'], custom['exec'],
-                                  custom['family'], None, True)
+                                  custom['family'], None, True, None)
             self.drivers.append(driver)
 
     def clear_custom_drivers(self):
@@ -108,3 +108,16 @@ class DriverCollection:
             else:
                 families[drv.family] = [drv.label]
         return families
+        
+    def apply_rules(self, rules):
+        """Apply rules to drivers based on their labels"""
+        if not rules:
+            return
+            
+        for rule in rules:
+            driver_label = rule.get('Driver')
+            
+            if driver_label:
+                driver = self.by_label(driver_label)
+                if driver:
+                    driver.rule = rule
