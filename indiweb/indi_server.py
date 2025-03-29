@@ -53,8 +53,9 @@ class IndiServer(object):
             cmd += ' -s "%s"' % driver.skeleton
 
         # Only add the label if it's not a remote driver (doesn't contain @)
-        if "@" not in driver.binary:
-            cmd += ' -n "%s"' % driver.label
+        # If MDPD is enabled, don't add the label as the driver will create multiple devices
+        if "@" not in driver.binary and not driver.mdpd:
+                cmd += ' -n "%s"' % driver.label
 
         rule = driver.rule
         # Check if we have script rule for pre driver startup
@@ -111,8 +112,9 @@ class IndiServer(object):
             logging.error("Driver is missing binary field. Is it installed? Please reinstall the driver!")
             return
 
-        if "@" not in driver.binary:
-            cmd += ' -n "%s"' % driver_label
+        # If MDPD is enabled, don't add the label as the driver will create multiple devices
+        if "@" not in driver.binary and not driver.mdpd:
+                cmd += ' -n "%s"' % driver_label
 
         cmd = cmd.replace('"', '\\"')
         full_cmd = 'echo "%s" > %s' % (cmd, self.__fifo)
