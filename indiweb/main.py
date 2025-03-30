@@ -137,6 +137,13 @@ def start_profile(profile):
             for remote_driver in remote_drivers:
                 driver = remote_driver['drivers']
                 one_driver = DeviceDriver(driver, driver, "1.0", driver, "Remote", None, False, None)
+
+                # Apply rules to remote drivers if any
+                if profile_scripts:
+                    for rule in profile_scripts:
+                        driver_label = rule.get('Driver')
+                        if driver_label and driver_label == driver:
+                            one_driver.rule = rule
                 logging.info("Adding remote driver: " + driver)
                 all_drivers.append(one_driver)
         else:
