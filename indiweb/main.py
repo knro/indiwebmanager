@@ -153,6 +153,11 @@ def start_profile(profile):
                 logging.warning(f"LOADING REMOTE DRIVER drv is {drv}")
                 all_drivers.append(DeviceDriver(drv, drv, "1.0", drv, "Remote", None, False, None))
 
+    # Sort drivers - those with .rule first, then remote drivers (family="Remote"), then others
+    all_drivers = sorted(all_drivers, 
+                        key=lambda d: (0 if hasattr(d, 'rule') else 1, 
+                                      1 if getattr(d, 'family', '') == 'Remote' else 2))
+
     if all_drivers:
         indi_server.start(info['port'], all_drivers)
         # Auto connect drivers in 3 seconds if required.
