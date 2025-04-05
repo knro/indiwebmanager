@@ -127,6 +127,25 @@ class IndiServer(object):
         driver_label = driver.label
         if device_label:
             driver_label = device_label
+
+        rule = driver.rule
+        # Check if we have script rule for pre driver shutdown
+        if rule:
+            stopping_script = rule.get("StoppingScript")
+            if stopping_script:
+                logging.info("Running Pre Shutdown Script %s" % stopping_script)
+                try:
+                    output = check_output(stopping_script).decode('utf_8')
+                except Exception as error:
+                    logging.warning("Pre Shutdown Script failed to execute: %s. Aborting..." % error)
+                    return
+                logging.info(output)
+            stopping_delay = rule.get("StoppingDelay", 0)
+            if stopping_delay > 0:
+                logging.info("Delaying driver shutdown by Stopping Delay %d second(s)..." % stopping_delay)
+                import time
+                time.sleep(stopping_delay)
+
         # escape quotes if they exist
         logging.info("Stopping driver: " + driver_label)
         cmd = 'stop '
@@ -144,6 +163,24 @@ class IndiServer(object):
         full_cmd = 'echo "%s" > %s' % (cmd, self.__fifo)
         logging.info(full_cmd)
         call(full_cmd, shell=True)
+
+        # Check if we have script rule for post driver shutdown
+        if rule:
+            stopped_delay = rule.get("StoppedDelay", 0)
+            if stopped_delay > 0:
+                logging.info("Delaying post driver shutdown by Post Delay %d second(s)..." % stopped_delay)
+                import time
+                time.sleep(stopped_delay)
+            stopped_script = rule.get("StoppedScript")
+            if stopped_script:
+                logging.info("Running Post Shutdown Script %s" % stopped_script)
+                try:
+                    output = check_output(stopped_script).decode('utf_8')
+                except Exception as error:
+                    logging.warning("Post Shutdown Script failed to execute: %s. Aborting..." % error)
+                    return
+                logging.info(output)
+
         del self.__running_drivers[driver.label]
 
     def start(self, port=INDI_PORT, drivers=[]):
