@@ -3,6 +3,7 @@ import logging
 import os
 from subprocess import call, check_output
 import threading
+import queue
 
 # Local imports
 from .AsyncSystemCommand import AsyncSystemCommand
@@ -22,6 +23,29 @@ class IndiServer(object):
         self.__async_cmd = None
         self.__command_thread = None
         self.__running_drivers = {}
+        self.__driver_starter_thread = None
+
+    def __driver_starter_worker(self, driver_queue):
+        """Worker thread to start drivers sequentially from a queue."""
+        while not driver_queue.empty():
+            try:
+                driver = driver_queue.get_nowait()
+                logging.info(f"Worker thread starting driver: {driver.label}")
+                self.start_driver(driver)
+                driver_queue.task_done()
+                logging.info(f"Worker thread finished starting driver: {driver.label}")
+            except queue.Empty:
+                # Queue became empty between check and get, just exit
+                break
+            except Exception as e:
+                # Log any other exceptions during driver start
+                logging.error(f"Error starting driver {driver.label if 'driver' in locals() else 'unknown'} in worker thread: {e}")
+                # Optionally, mark task as done even on error to prevent blocking join() if used later
+                # driver_queue.task_done() 
+                # Decide if one driver error should stop others, currently it continues
+                continue
+        logging.info("Driver starter worker thread finished.")
+
 
     def __clear_fifo(self):
         logging.info("Deleting fifo %s" % self.__fifo)
@@ -53,8 +77,9 @@ class IndiServer(object):
             cmd += ' -s "%s"' % driver.skeleton
 
         # Only add the label if it's not a remote driver (doesn't contain @)
-        if "@" not in driver.binary:
-            cmd += ' -n "%s"' % driver.label
+        # If MDPD is enabled, don't add the label as the driver will create multiple devices
+        if "@" not in driver.binary and not driver.mdpd:
+                cmd += ' -n "%s"' % driver.label
 
         rule = driver.rule
         # Check if we have script rule for pre driver startup
@@ -130,8 +155,9 @@ class IndiServer(object):
             logging.error("Driver is missing binary field. Is it installed? Please reinstall the driver!")
             return
 
-        if "@" not in driver.binary:
-            cmd += ' -n "%s"' % driver_label
+        # If MDPD is enabled, don't add the label as the driver will create multiple devices
+        if "@" not in driver.binary and not driver.mdpd:
+                cmd += ' -n "%s"' % driver_label
 
         cmd = cmd.replace('"', '\\"')
         full_cmd = 'echo "%s" > %s' % (cmd, self.__fifo)
@@ -163,10 +189,25 @@ class IndiServer(object):
 
         self.__clear_fifo()
         self.__run(port)
+        # Reset running drivers list immediately
         self.__running_drivers = {}
 
-        for driver in drivers:
-            self.start_driver(driver)
+        if drivers:
+            driver_queue = queue.Queue()
+            for driver in drivers:
+                driver_queue.put(driver)
+
+            # Start the driver starter worker thread
+            self.__driver_starter_thread = threading.Thread(
+                target=self.__driver_starter_worker,
+                args=(driver_queue,),
+                daemon=True  # Set as daemon so it doesn't block program exit
+            )
+            logging.info("Starting background thread for driver initialization.")
+            self.__driver_starter_thread.start()
+        else:
+            logging.info("No drivers specified to start.")
+
 
     def stop(self, port=None):
         # If port is not specified, use the port from the last start command

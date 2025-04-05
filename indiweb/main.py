@@ -108,13 +108,11 @@ def start_profile(profile):
     info = db.get_profile(profile)
 
     profile_drivers = db.get_profile_drivers_labels(profile)
+    profile_scripts = None
     if info.get('scripts'):
         try:
             profile_scripts = json.loads(info['scripts'])
-            for one_script in profile_scripts:
-                one_driver = collection.by_label(one_script['Driver'])
-                if one_driver:
-                    one_driver.rule = one_script
+            collection.apply_rules(profile_scripts)
         except json.JSONDecodeError:
             logging.warning("Failed to parse scripts JSON for profile %s" % profile)
         except Exception as e:
@@ -138,7 +136,14 @@ def start_profile(profile):
         if isinstance(remote_drivers, list):
             for remote_driver in remote_drivers:
                 driver = remote_driver['drivers']
-                one_driver = DeviceDriver(driver, driver, "1.0", driver, "Remote")
+                one_driver = DeviceDriver(driver, driver, "1.0", driver, "Remote", None, False, None)
+
+                # Apply rules to remote drivers if any
+                if profile_scripts:
+                    for rule in profile_scripts:
+                        driver_label = rule.get('Driver')
+                        if driver_label and driver_label == driver:
+                            one_driver.rule = rule
                 logging.info("Adding remote driver: " + driver)
                 all_drivers.append(one_driver)
         else:
@@ -146,7 +151,12 @@ def start_profile(profile):
             drivers = remote_drivers['drivers'].split(',')
             for drv in drivers:
                 logging.warning(f"LOADING REMOTE DRIVER drv is {drv}")
-                all_drivers.append(DeviceDriver(drv, drv, "1.0", drv, "Remote"))
+                all_drivers.append(DeviceDriver(drv, drv, "1.0", drv, "Remote", None, False, None))
+
+    # Sort drivers - those with .rule first, then remote drivers (family="Remote"), then others
+    all_drivers = sorted(all_drivers, 
+                        key=lambda d: (0 if hasattr(d, 'rule') else 1, 
+                                      1 if getattr(d, 'family', '') == 'Remote' else 2))
 
     if all_drivers:
         indi_server.start(info['port'], all_drivers)
@@ -370,7 +380,7 @@ def start_driver(label):
 @app.post('/api/drivers/start_remote/<label>')
 def start_remote_driver(label):
     """Start INDI driver"""
-    driver = DeviceDriver(label, label, "1.0", label, "Remote")
+    driver = DeviceDriver(label, label, "1.0", label, "Remote", None, False, None)
     indi_server.start_driver(driver)
     logging.info('Driver "%s" started.' % label)
 
@@ -384,7 +394,7 @@ def stop_driver(label):
 @app.post('/api/drivers/stop_remote/<label>')
 def stop_remote_driver(label):
     """Stop INDI driver"""
-    driver = DeviceDriver(label, label, "1.0", label, "Remote")
+    driver = DeviceDriver(label, label, "1.0", label, "Remote", None, False, None)
     indi_server.stop_driver(driver)
     logging.info('Driver "%s" stopped.' % label)
 
