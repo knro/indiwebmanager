@@ -105,6 +105,16 @@ active_profile = ""
 
 
 def start_profile(profile):
+    """
+    Starts the INDI server with the specified profile.
+
+    Args:
+        profile (str): The name of the profile to start.
+
+    Handles:
+        json.JSONDecodeError: If the scripts JSON is invalid.
+        Exception: For other errors during script processing.
+    """
     info = db.get_profile(profile)
 
     profile_drivers = db.get_profile_drivers_labels(profile)
@@ -168,19 +178,37 @@ def start_profile(profile):
 
 @app.route('/static/<path:path>')
 def callback(path):
-    """Serve static files"""
+    """
+    Serves static files from the views directory.
+
+    Args:
+        path (str): The path to the static file relative to the views directory.
+
+    Returns:
+        bottle.StaticFile: The static file response.
+    """
     return static_file(path, root=views_path)
 
 
 @app.route('/favicon.ico', method='GET')
 def get_favicon():
-    """Serve favicon"""
+    """
+    Serves the favicon.ico file.
+
+    Returns:
+        bottle.StaticFile: The favicon file response.
+    """
     return static_file('favicon.ico', root=views_path)
 
 
 @app.route('/')
 def main_form():
-    """Main page"""
+    """
+    Renders the main form page.
+
+    Returns:
+        str: The rendered HTML template.
+    """
     global saved_profile
     drivers = collection.get_families()
 
@@ -203,33 +231,61 @@ def main_form():
 
 @app.get('/api/profiles')
 def get_json_profiles():
-    """Get all profiles (JSON)"""
+    """
+    Gets all profiles from the database as JSON.
+
+    Returns:
+        str: A JSON string representing the profiles.
+    """
     results = db.get_profiles()
     return json.dumps(results)
 
 
 @app.get('/api/profiles/<item>')
 def get_json_profile(item):
-    """Get one profile info"""
+    """
+    Gets information for a specific profile as JSON.
+
+    Args:
+        item (str): The name of the profile.
+
+    Returns:
+        str: A JSON string representing the profile information.
+    """
     results = db.get_profile(item)
     return json.dumps(results)
 
 
 @app.post('/api/profiles/<name>')
 def add_profile(name):
-    """Add new profile"""
+    """
+    Adds a new profile to the database.
+
+    Args:
+        name (str): The name of the profile to add.
+    """
     db.add_profile(name)
 
 
 @app.delete('/api/profiles/<name>')
 def delete_profile(name):
-    """Delete Profile"""
+    """
+    Deletes a profile from the database.
+
+    Args:
+        name (str): The name of the profile to delete.
+    """
     db.delete_profile(name)
 
 
 @app.put('/api/profiles/<name>')
 def update_profile(name):
-    """Update profile info (port & autostart & autoconnect & scripts)"""
+    """
+    Updates the information for a specific profile.
+
+    Args:
+        name (str): The name of the profile to update.
+    """
     response.set_cookie("indiserver_profile", name,
                         None, max_age=3600000, path='/')
     data = request.json
@@ -242,14 +298,21 @@ def update_profile(name):
 
 @app.post('/api/profiles/<name>/drivers')
 def save_profile_drivers(name):
-    """Add drivers to existing profile"""
+    """
+    Saves the drivers associated with a profile.
+
+    Args:
+        name (str): The name of the profile.
+    """
     data = request.json
     db.save_profile_drivers(name, data)
 
 
 @app.post('/api/profiles/custom')
 def save_profile_custom_driver():
-    """Add custom driver to existing profile"""
+    """
+    Adds a custom driver to the database and updates the driver collection.
+    """
     data = request.json
     db.save_profile_custom_driver(data)
     collection.clear_custom_drivers()
@@ -258,14 +321,30 @@ def save_profile_custom_driver():
 
 @app.get('/api/profiles/<item>/labels')
 def get_json_profile_labels(item):
-    """Get driver labels of specific profile"""
+    """
+    Gets the driver labels for a specific profile as JSON.
+
+    Args:
+        item (str): The name of the profile.
+
+    Returns:
+        str: A JSON string representing the driver labels.
+    """
     results = db.get_profile_drivers_labels(item)
     return json.dumps(results)
 
 
 @app.get('/api/profiles/<item>/remote')
 def get_remote_drivers(item):
-    """Get remote drivers of specific profile"""
+    """
+    Gets the remote drivers for a specific profile as JSON.
+
+    Args:
+        item (str): The name of the profile.
+
+    Returns:
+        str: A JSON string representing the remote drivers.
+    """
     results = db.get_profile_remote_drivers(item)
     if results is None:
         results = {}
@@ -278,14 +357,24 @@ def get_remote_drivers(item):
 
 @app.get('/api/server/status')
 def get_server_status():
-    """Server status"""
+    """
+    Gets the status of the INDI server and the active profile as JSON.
+
+    Returns:
+        str: A JSON string representing the server status.
+    """
     status = [{'status': str(indi_server.is_running()), 'active_profile': active_profile}]
     return json.dumps(status)
 
 
 @app.get('/api/server/drivers')
 def get_server_drivers():
-    """List server drivers"""
+    """
+    Lists the currently running server drivers as JSON.
+
+    Returns:
+        str: A JSON string representing the running drivers.
+    """
     # status = []
     # for driver in indi_server.get_running_drivers():
     #     status.append({'driver': driver})
@@ -303,7 +392,12 @@ def get_server_drivers():
 
 @app.post('/api/server/start/<profile>')
 def start_server(profile):
-    """Start INDI server for a specific profile"""
+    """
+    Starts the INDI server for a specific profile.
+
+    Args:
+        profile (str): The name of the profile to start.
+    """
     global saved_profile
     saved_profile = profile
     global active_profile
@@ -315,7 +409,9 @@ def start_server(profile):
 
 @app.post('/api/server/stop')
 def stop_server():
-    """Stop INDI Server"""
+    """
+    Stops the INDI server.
+    """
     indi_server.stop()
 
     global active_profile
@@ -332,13 +428,25 @@ def stop_server():
 ###############################################################################
 
 @app.get('/api/info/version')
-def get_version():    
+def get_version():
+    """
+    Gets the version of indiwebmanager.
+
+    Returns:
+        dict: A dictionary containing the version.
+    """
     return {"version": version("indiweb")}
 
 
 # Get StellarMate Architecture
 @app.get('/api/info/arch')
 def get_arch():
+    """
+    Gets the architecture of the system.
+
+    Returns:
+        str: The system architecture.
+    """
     arch = platform.machine()
     if arch == "aarch64":
         arch = "arm64"
@@ -349,6 +457,12 @@ def get_arch():
 # Get Hostname
 @app.get('/api/info/hostname')
 def get_hostname():
+    """
+    Gets the hostname of the system.
+
+    Returns:
+        dict: A dictionary containing the hostname.
+    """
     return {"hostname": socket.gethostname()}
     
 ###############################################################################
@@ -357,7 +471,12 @@ def get_hostname():
 
 @app.get('/api/drivers/groups')
 def get_json_groups():
-    """Get all driver families (JSON)"""
+    """
+    Gets all driver families as JSON.
+
+    Returns:
+        str: A JSON string representing the driver families.
+    """
     response.content_type = 'application/json'
     families = collection.get_families()
     return json.dumps(sorted(families.keys()))
@@ -365,35 +484,60 @@ def get_json_groups():
 
 @app.get('/api/drivers')
 def get_json_drivers():
-    """Get all drivers (JSON)"""
+    """
+    Gets all drivers as JSON.
+
+    Returns:
+        str: A JSON string representing all drivers.
+    """
     response.content_type = 'application/json'
     return json.dumps([ob.__dict__ for ob in collection.drivers])
 
 
 @app.post('/api/drivers/start/<label>')
 def start_driver(label):
-    """Start INDI driver"""
+    """
+    Starts an INDI driver by label.
+
+    Args:
+        label (str): The label of the driver to start.
+    """
     driver = collection.by_label(label)
     indi_server.start_driver(driver)
     logging.info('Driver "%s" started.' % label)
 
 @app.post('/api/drivers/start_remote/<label>')
 def start_remote_driver(label):
-    """Start INDI driver"""
+    """
+    Starts a remote INDI driver.
+
+    Args:
+        label (str): The label of the remote driver to start.
+    """
     driver = DeviceDriver(label, label, "1.0", label, "Remote", None, False, None)
     indi_server.start_driver(driver)
     logging.info('Driver "%s" started.' % label)
 
 @app.post('/api/drivers/stop/<label>')
 def stop_driver(label):
-    """Stop INDI driver"""
+    """
+    Stops an INDI driver by label.
+
+    Args:
+        label (str): The label of the driver to stop.
+    """
     driver = collection.by_label(label)
     indi_server.stop_driver(driver)
     logging.info('Driver "%s" stopped.' % label)
 
 @app.post('/api/drivers/stop_remote/<label>')
 def stop_remote_driver(label):
-    """Stop INDI driver"""
+    """
+    Stops a remote INDI driver.
+
+    Args:
+        label (str): The label of the remote driver to stop.
+    """
     driver = DeviceDriver(label, label, "1.0", label, "Remote", None, False, None)
     indi_server.stop_driver(driver)
     logging.info('Driver "%s" stopped.' % label)
@@ -401,7 +545,12 @@ def stop_remote_driver(label):
 
 @app.post('/api/drivers/restart/<label>')
 def restart_driver(label):
-    """Restart INDI driver"""
+    """
+    Restarts an INDI driver by label.
+
+    Args:
+        label (str): The label of the driver to restart.
+    """
     driver = collection.by_label(label)
     indi_server.stop_driver(driver)
     indi_server.start_driver(driver)
@@ -414,6 +563,12 @@ def restart_driver(label):
 
 @app.get('/api/devices')
 def get_devices():
+    """
+    Gets a list of connected INDI devices as JSON.
+
+    Returns:
+        str: A JSON string representing the connected devices.
+    """
     return json.dumps(indi_device.get_devices())
 
 ###############################################################################
@@ -423,7 +578,12 @@ def get_devices():
 
 @app.post('/api/system/reboot')
 def system_reboot():
-    """reboot the system running indi-web"""
+    """
+    Reboots the system running indi-web.
+
+    Handles:
+        subprocess.CalledProcessError: If the reboot command fails.
+    """
     logging.info('System reboot, stopping server...')
     stop_server()
     logging.info('rebooting...')
@@ -432,7 +592,12 @@ def system_reboot():
 
 @app.post('/api/system/poweroff')
 def system_poweroff():
-    """poweroff the system"""
+    """
+    Powers off the system.
+
+    Handles:
+        subprocess.CalledProcessError: If the poweroff command fails.
+    """
     logging.info('System poweroff, stopping server...')
     stop_server()
     logging.info('poweroff...')
@@ -445,7 +610,10 @@ def system_poweroff():
 
 
 def main():
-    """Start autostart profile if any"""
+    """
+    Main function to start the indiwebmanager application.
+    Starts the autostart profile if configured and runs the web server.
+    """
     global active_profile
 
     for profile in db.get_profiles():
