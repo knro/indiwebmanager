@@ -174,7 +174,7 @@ def start_profile(profile):
             t.start()
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse, tags=["Web Interface"])
 async def main_form(request: Request):
     """
     Renders the main form page.
@@ -204,7 +204,7 @@ async def main_form(request: Request):
 ###############################################################################
 
 
-@app.get('/api/profiles')
+@app.get('/api/profiles', tags=["Profiles"])
 async def get_json_profiles():
     """
     Gets all profiles from the database as JSON.
@@ -216,7 +216,7 @@ async def get_json_profiles():
     return JSONResponse(content=results)
 
 
-@app.get('/api/profiles/{item}')
+@app.get('/api/profiles/{item}', tags=["Profiles"])
 async def get_json_profile(item: str):
     """
     Gets information for a specific profile as JSON.
@@ -233,7 +233,7 @@ async def get_json_profile(item: str):
     raise HTTPException(status_code=404, detail="Profile not found")
 
 
-@app.post('/api/profiles/{name}')
+@app.post('/api/profiles/{name}', tags=["Profiles"])
 async def add_profile(name: str):
     """
     Adds a new profile to the database.
@@ -245,7 +245,7 @@ async def add_profile(name: str):
     return {"message": f"Profile {name} added"}
 
 
-@app.delete('/api/profiles/{name}')
+@app.delete('/api/profiles/{name}', tags=["Profiles"])
 async def delete_profile(name: str):
     """
     Deletes a profile from the database.
@@ -257,7 +257,7 @@ async def delete_profile(name: str):
     return {"message": f"Profile {name} deleted"}
 
 
-@app.put('/api/profiles/{name}')
+@app.put('/api/profiles/{name}', tags=["Profiles"])
 async def update_profile(name: str, request: Request, response: Response):
     """
     Updates the information for a specific profile.
@@ -275,7 +275,7 @@ async def update_profile(name: str, request: Request, response: Response):
     return {"message": f"Profile {name} updated"}
 
 
-@app.post('/api/profiles/{name}/drivers')
+@app.post('/api/profiles/{name}/drivers', tags=["Profiles"])
 async def save_profile_drivers(name: str, request: Request):
     """
     Saves the drivers associated with a profile.
@@ -288,7 +288,7 @@ async def save_profile_drivers(name: str, request: Request):
     return {"message": f"Drivers saved for profile {name}"}
 
 
-@app.post('/api/profiles/custom')
+@app.post('/api/profiles/custom', tags=["Profiles"])
 async def save_profile_custom_driver(request: Request):
     """
     Adds a custom driver to the database and updates the driver collection.
@@ -300,7 +300,7 @@ async def save_profile_custom_driver(request: Request):
     return {"message": "Custom driver saved and collection updated"}
 
 
-@app.get('/api/profiles/{item}/labels')
+@app.get('/api/profiles/{item}/labels', tags=["Profiles"])
 async def get_json_profile_labels(item: str):
     """
     Gets the driver labels for a specific profile as JSON.
@@ -315,7 +315,7 @@ async def get_json_profile_labels(item: str):
     return JSONResponse(content=results)
 
 
-@app.get('/api/profiles/{item}/remote')
+@app.get('/api/profiles/{item}/remote', tags=["Profiles"])
 async def get_remote_drivers(item: str):
     """
     Gets the remote drivers for a specific profile as JSON.
@@ -336,7 +336,7 @@ async def get_remote_drivers(item: str):
 # Server endpoints
 ###############################################################################
 
-@app.get('/api/server/status')
+@app.get('/api/server/status', tags=["Server"])
 async def get_server_status():
     """
     Gets the status of the INDI server and the active profile as JSON.
@@ -348,7 +348,7 @@ async def get_server_status():
     return JSONResponse(content=status)
 
 
-@app.get('/api/server/drivers')
+@app.get('/api/server/drivers', tags=["Server"])
 async def get_server_drivers():
     """
     Lists the currently running server drivers as JSON.
@@ -363,7 +363,7 @@ async def get_server_drivers():
     return JSONResponse(content=drivers)
 
 
-@app.post('/api/server/start/{profile}')
+@app.post('/api/server/start/{profile}', tags=["Server"])
 async def start_server(profile: str, response: Response):
     """
     Starts the INDI server for a specific profile.
@@ -380,7 +380,7 @@ async def start_server(profile: str, response: Response):
     return {"message": f"INDI server started for profile {profile}"}
 
 
-@app.post('/api/server/stop')
+@app.post('/api/server/stop', tags=["Server"])
 async def stop_server():
     """
     Stops the INDI server.
@@ -406,7 +406,7 @@ async def stop_server():
 # Info endpoints
 ###############################################################################
 
-@app.get('/api/info/version')
+@app.get('/api/info/version', tags=["Info"])
 async def get_version():
     """
     Gets the version of indiwebmanager.
@@ -418,7 +418,7 @@ async def get_version():
 
 
 # Get StellarMate Architecture
-@app.get('/api/info/arch')
+@app.get('/api/info/arch', tags=["Info"])
 async def get_arch():
     """
     Gets the architecture of the system.
@@ -434,7 +434,7 @@ async def get_arch():
     return arch
 
 # Get Hostname
-@app.get('/api/info/hostname')
+@app.get('/api/info/hostname', tags=["Info"])
 async def get_hostname():
     """
     Gets the hostname of the system.
@@ -448,7 +448,7 @@ async def get_hostname():
 # Driver endpoints
 ###############################################################################
 
-@app.get('/api/drivers/groups')
+@app.get('/api/drivers/groups', tags=["Drivers"])
 async def get_json_groups():
     """
     Gets all driver families as JSON.
@@ -460,7 +460,7 @@ async def get_json_groups():
     return JSONResponse(content=sorted(families.keys()))
 
 
-@app.get('/api/drivers')
+@app.get('/api/drivers', tags=["Drivers"])
 async def get_json_drivers():
     """
     Gets all drivers as JSON.
@@ -471,7 +471,7 @@ async def get_json_drivers():
     return JSONResponse(content=[ob.__dict__ for ob in collection.drivers])
 
 
-@app.post('/api/drivers/start/{label}')
+@app.post('/api/drivers/start/{label}', tags=["Drivers"])
 async def start_driver(label: str):
     """
     Starts an INDI driver by label.
@@ -487,7 +487,7 @@ async def start_driver(label: str):
     raise HTTPException(status_code=404, detail="Driver not found")
 
 
-@app.post('/api/drivers/start_remote/<label>')
+@app.post('/api/drivers/start_remote/<label>', tags=["Drivers"])
 async def start_remote_driver(label: str):
     """
     Starts a remote INDI driver.
@@ -501,7 +501,7 @@ async def start_remote_driver(label: str):
     return {"message": f"Remote driver {label} started"}
 
 
-@app.post('/api/drivers/stop/<label>')
+@app.post('/api/drivers/stop/<label>', tags=["Drivers"])
 async def stop_driver(label: str):
     """
     Stops an INDI driver by label.
@@ -517,7 +517,7 @@ async def stop_driver(label: str):
     raise HTTPException(status_code=404, detail="Driver not found")
 
 
-@app.post('/api/drivers/stop_remote/<label>')
+@app.post('/api/drivers/stop_remote/<label>', tags=["Drivers"])
 async def stop_remote_driver(label: str):
     """
     Stops a remote INDI driver.
@@ -531,7 +531,7 @@ async def stop_remote_driver(label: str):
     return {"message": f"Remote driver {label} stopped"}
 
 
-@app.post('/api/drivers/restart/<label>')
+@app.post('/api/drivers/restart/<label>', tags=["Drivers"])
 async def restart_driver(label: str):
     """
     Restarts an INDI driver by label.
@@ -552,7 +552,7 @@ async def restart_driver(label: str):
 ###############################################################################
 
 
-@app.get('/api/devices')
+@app.get('/api/devices', tags=["Devices"])
 async def get_devices():
     """
     Gets a list of connected INDI devices as JSON.
@@ -567,7 +567,7 @@ async def get_devices():
 ###############################################################################
 
 
-@app.post('/api/system/reboot')
+@app.post('/api/system/reboot', tags=["System"])
 async def system_reboot():
     """
     Reboots the system running indi-web.
@@ -582,7 +582,7 @@ async def system_reboot():
     return {"message": "System is rebooting"}
 
 
-@app.post('/api/system/poweroff')
+@app.post('/api/system/poweroff', tags=["System"])
 async def system_poweroff():
     """
     Powers off the system.
