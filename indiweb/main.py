@@ -110,6 +110,11 @@ def start_profile(profile):
     """
     info = db.get_profile(profile)
 
+    if info is None:
+        logging.warning(f"Profile '{profile}' not found in the database.")
+        # Depending on desired behavior, could return or raise HTTPException
+        HTTPException(status_code=404, detail=f"Profile '{profile}' not found")
+
     profile_drivers = db.get_profile_drivers_labels(profile)
     profile_scripts = None
     if info.get('scripts'):
@@ -153,12 +158,12 @@ def start_profile(profile):
             # Handle the case where remote_drivers is a single dictionary
             drivers = remote_drivers['drivers'].split(',')
             for drv in drivers:
-                logging.warning(f"LOADING REMOTE DRIVER drv is {drv}")
+                logging.warning("LOADING REMOTE DRIVER drv is {}".format(drv))
                 all_drivers.append(DeviceDriver(drv, drv, "1.0", drv, "Remote", None, False, None))
 
     # Sort drivers - those with .rule first, then remote drivers (family="Remote"), then others
-    all_drivers = sorted(all_drivers, 
-                        key=lambda d: (0 if hasattr(d, 'rule') else 1, 
+    all_drivers = sorted(all_drivers,
+                        key=lambda d: (0 if hasattr(d, 'rule') else 1,
                                       1 if getattr(d, 'family', '') == 'Remote' else 2))
 
     if all_drivers:
@@ -183,13 +188,15 @@ async def main_form(request: Request):
     saved_profile = request.cookies.get('indiserver_profile') or 'Simulators'
 
     profiles = db.get_profiles()
+    logging.debug(f"Profiles retrieved from DB: {profiles}")
     return templates.TemplateResponse(
         "form.tpl",
         {"request": request,
          "profiles": profiles,
          "drivers": drivers,
          "saved_profile": saved_profile,
-         "hostname": hostname}
+         "hostname": hostname,
+         "sorted": sorted} # Add sorted to the context
     )
 
 ###############################################################################
