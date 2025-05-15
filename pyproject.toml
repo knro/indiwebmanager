@@ -8,7 +8,7 @@ include-package-data = true
 
 [project]
 name = "indiweb"
-version = "0.2.0" # Also update app = FastAPI(version="") in main.py
+version = "1.0.0" # Also update app = FastAPI(version="") in main.py
 authors = [
   { name="Jasem Mutlaq", email="mutlaqja@ikarustech.com" },
   { name="Juan Menendez", email="juanmb@gmail.com" }

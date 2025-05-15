@@ -86,7 +86,7 @@ db = Database(db_path)
 
 collection.parse_custom_drivers(db.get_custom_drivers())
 
-app = FastAPI(title="INDI Web Manager", version="0.2.0")
+app = FastAPI(title="INDI Web Manager", version="1.0.0")
 
 # Serve static files
 app.mount("/static", StaticFiles(directory=views_path), name="static")
@@ -487,7 +487,7 @@ async def start_driver(label: str):
     raise HTTPException(status_code=404, detail="Driver not found")
 
 
-@app.post('/api/drivers/start_remote/<label>', tags=["Drivers"])
+@app.post('/api/drivers/start_remote/{label}', tags=["Drivers"])
 async def start_remote_driver(label: str):
     """
     Starts a remote INDI driver.
@@ -501,7 +501,7 @@ async def start_remote_driver(label: str):
     return {"message": f"Remote driver {label} started"}
 
 
-@app.post('/api/drivers/stop/<label>', tags=["Drivers"])
+@app.post('/api/drivers/stop/{label}', tags=["Drivers"])
 async def stop_driver(label: str):
     """
     Stops an INDI driver by label.
@@ -517,7 +517,7 @@ async def stop_driver(label: str):
     raise HTTPException(status_code=404, detail="Driver not found")
 
 
-@app.post('/api/drivers/stop_remote/<label>', tags=["Drivers"])
+@app.post('/api/drivers/stop_remote/{label}', tags=["Drivers"])
 async def stop_remote_driver(label: str):
     """
     Stops a remote INDI driver.
@@ -531,7 +531,7 @@ async def stop_remote_driver(label: str):
     return {"message": f"Remote driver {label} stopped"}
 
 
-@app.post('/api/drivers/restart/<label>', tags=["Drivers"])
+@app.post('/api/drivers/restart/{label}', tags=["Drivers"])
 async def restart_driver(label: str):
     """
     Restarts an INDI driver by label.
