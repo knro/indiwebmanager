@@ -19,7 +19,7 @@ installed on the target system.
 You can install the **indiweb** Python package using pip:
 
 ```
-$ pip install indiweb fastapi uvicorn
+$ pip install indiweb
 ```
 
 You may want to install it system-wide, only in your user account or even into
@@ -30,7 +30,7 @@ If you want to install it system-wide, you will have to invoke pip with
 superuser rights:
 
 ```
-$ sudo pip install indiweb fastapi uvicorn
+$ sudo pip install indiweb
 ```
 
 # Usage
@@ -82,7 +82,7 @@ please edit the file and change the username first.
 Indiwebmanager must be installed system-wide:
 
 ```
-sudo pip install indiweb fastapi uvicorn
+sudo pip install indiweb
 ```
 
 Copy your preferred service file to `/etc/systemd/system`:
