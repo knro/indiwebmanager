@@ -22,8 +22,14 @@
 <body>
 
   <div class="container">
-
-    <h4>{{hostname}} INDI Web Manager</h4>
+    <div class="row" style="align-items: center;">
+      <div class="col-sm-6">
+        <h4>{{hostname}} INDI Web Manager</h4>
+        </div>
+        <div class="col-sm-6 text-right">
+          <a href="/docs" class="btn btn-default" style="margin-top: 10px;">API</a>
+        </div>
+      </div>
     <!-- <form> !-->
 
       <div id="firstrow" class="row">
@@ -119,9 +125,6 @@
         </div>
     </div>
 
-    <div style="margin-bottom: 20px;">
-      <a href="/docs" class="btn btn-default">API Docs</a>
-    </div>
 
   </div>
 
