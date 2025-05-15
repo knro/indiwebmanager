@@ -7,14 +7,29 @@ from subprocess import check_output
 
 
 class Device:
-    """A collection of device"""
+    """
+    A collection of device related functionalities.
+    """
 
     def __init__(self):
+        """
+        Initializes the Device class with default host and port.
+        """
         self.host = "localhost"
         self.port = 7624
 
     @staticmethod
     def get_devices():
+        """
+        Gets a list of connected INDI devices.
+
+        Returns:
+            list: A list of dictionaries, where each dictionary represents a device
+                  with 'device' name and 'connected' status.
+
+        Handles:
+            Exception: If there is an error executing the indi_getprop command.
+        """
         cmd = ['indi_getprop', '*.CONNECTION.CONNECT']
         try:
             output = check_output(cmd).decode('utf_8')
@@ -28,3 +43,4 @@ class Device:
             return devices
         except Exception as e:
             logging.error(e)
+            return []

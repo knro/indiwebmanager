@@ -16,7 +16,17 @@ except KeyError:
     INDI_CONFIG_DIR = '/tmp/indi'
 
 class IndiServer(object):
+    """
+    Manages the INDI server process and driver interactions.
+    """
     def __init__(self, fifo=INDI_FIFO, conf_dir=INDI_CONFIG_DIR):
+        """
+        Initializes the IndiServer with FIFO and configuration directory paths.
+
+        Args:
+            fifo (str, optional): The path to the INDI FIFO file. Defaults to INDI_FIFO.
+            conf_dir (str, optional): The path to the INDI configuration directory. Defaults to INDI_CONFIG_DIR.
+        """
         self.__fifo = fifo
         self.__sock_path = f"{self.__fifo}_sock"
         self.__conf_dir = conf_dir
@@ -26,7 +36,16 @@ class IndiServer(object):
         self.__driver_starter_thread = None
 
     def __driver_starter_worker(self, driver_queue):
-        """Worker thread to start drivers sequentially from a queue."""
+        """
+        Worker thread to start drivers sequentially from a queue.
+
+        Args:
+            driver_queue (queue.Queue): The queue containing drivers to start.
+
+        Handles:
+            queue.Empty: If the queue becomes empty.
+            Exception: For any errors during driver startup.
+        """
         while not driver_queue.empty():
             try:
                 driver = driver_queue.get_nowait()
@@ -48,11 +67,23 @@ class IndiServer(object):
 
 
     def __clear_fifo(self):
+        """
+        Clears and recreates the INDI FIFO file.
+
+        Handles:
+            Exception: If there are issues with file operations.
+        """
         logging.info("Deleting fifo %s" % self.__fifo)
         call(['rm', '-f', self.__fifo])
         call(['mkfifo', self.__fifo])
 
     def __run(self, port):
+        """
+        Runs the INDI server process.
+
+        Args:
+            port (int): The port number for the INDI server.
+        """
         # Store the port for later use
         self.__port = port
         cmd = 'indiserver -p %d -m 1000 -v -f %s -u %s > /tmp/indiserver.log 2>&1' % \
@@ -64,6 +95,16 @@ class IndiServer(object):
         self.__command_thread.start()
 
     def start_driver(self, driver):
+        """
+        Starts an INDI driver.
+
+        Args:
+            driver (DeviceDriver): The driver object to start.
+
+        Handles:
+            AttributeError: If the driver object is missing the binary field.
+            Exception: If there are issues executing pre or post scripts.
+        """
         # escape quotes if they exist
         logging.info("Starting driver: " + driver.label)
         cmd = 'start '
@@ -124,6 +165,17 @@ class IndiServer(object):
         self.__running_drivers[driver.label] = driver
 
     def stop_driver(self, driver, device_label=None):
+        """
+        Stops an INDI driver.
+
+        Args:
+            driver (DeviceDriver): The driver object to stop.
+            device_label (str, optional): The specific device label to stop if different from driver label. Defaults to None.
+
+        Handles:
+            AttributeError: If the driver object is missing the binary field.
+            Exception: If there are issues executing pre or post shutdown scripts.
+        """
         driver_label = driver.label
         if device_label:
             driver_label = device_label
@@ -184,6 +236,13 @@ class IndiServer(object):
         del self.__running_drivers[driver.label]
 
     def start(self, port=INDI_PORT, drivers=[]):
+        """
+        Starts the INDI server and optionally starts a list of drivers.
+
+        Args:
+            port (int, optional): The port to run the INDI server on. Defaults to INDI_PORT.
+            drivers (list, optional): A list of DeviceDriver objects to start. Defaults to [].
+        """
         if self.is_running(port):
             self.stop(port)
 
@@ -210,6 +269,19 @@ class IndiServer(object):
 
 
     def stop(self, port=None):
+        """
+        Stops the INDI server process.
+
+        Args:
+            port (int, optional): The port of the INDI server to stop. Defaults to the last used port or INDI_PORT.
+
+        Handles:
+            ImportError: If psutil is not installed.
+            psutil.Error: If there are issues using psutil.
+            ValueError: If port value is invalid.
+            IndexError: If command line arguments are not as expected.
+            Exception: If there are issues terminating the async command.
+        """
         # If port is not specified, use the port from the last start command
         if port is None:
             port = getattr(self, '_IndiServer__port', INDI_PORT)
@@ -249,6 +321,21 @@ class IndiServer(object):
             logging.warn('indi_server: termination of async command failed with error ' + str(e))
 
     def is_running(self, port=None):
+        """
+        Checks if the INDI server is currently running on a specific port.
+
+        Args:
+            port (int, optional): The port to check. Defaults to the last used port or INDI_PORT.
+
+        Returns:
+            bool: True if the server is running, False otherwise.
+
+        Handles:
+            ImportError: If psutil is not installed.
+            psutil.Error: If there are issues using psutil.
+            ValueError: If port value is invalid.
+            IndexError: If command line arguments are not as expected.
+        """
         # If port is not specified, use the port from the last start command
         if port is None:
             port = getattr(self, '_IndiServer__port', INDI_PORT)
@@ -275,18 +362,57 @@ class IndiServer(object):
         return False
 
     def set_prop(self, dev, prop, element, value):
+        """
+        Sets an INDI property value.
+
+        Args:
+            dev (str): The device name.
+            prop (str): The property name.
+            element (str): The element name.
+            value (str): The value to set.
+        """
         cmd = ['indi_setprop', '%s.%s.%s=%s' % (dev, prop, element, value)]
         call(cmd)
 
     def get_prop(self, dev, prop, element):
+        """
+        Gets an INDI property value.
+
+        Args:
+            dev (str): The device name.
+            prop (str): The property name.
+            element (str): The element name.
+
+        Returns:
+            str: The value of the property element.
+
+        Handles:
+            Exception: If there is an error executing the indi_getprop command.
+        """
         cmd = ['indi_getprop', '%s.%s.%s' % (dev, prop, element)]
         output = check_output(cmd)
         return output.split('=')[1].strip()
 
     def get_state(self, dev, prop):
+        """
+        Gets the state of an INDI property.
+
+        Args:
+            dev (str): The device name.
+            prop (str): The property name.
+
+        Returns:
+            str: The state of the property.
+        """
         return self.get_prop(dev, prop, '_STATE')
 
     def auto_connect(self):
+        """
+        Automatically connects to all available INDI devices.
+
+        Handles:
+            Exception: If there is an error executing the indi_getprop command.
+        """
         cmd = ['indi_getprop', '*.CONNECTION.CONNECT']
         output = ""
         try:
@@ -302,5 +428,11 @@ class IndiServer(object):
             call(command)
 
     def get_running_drivers(self):
+        """
+        Gets a dictionary of currently running drivers.
+
+        Returns:
+            dict: A dictionary where keys are driver labels and values are DeviceDriver objects.
+        """
         drivers = self.__running_drivers
         return drivers

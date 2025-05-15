@@ -8,7 +8,7 @@ locally, and also to connect or **chain** to remote INDI servers.
 
 ![INDI Web Manager](http://indilib.org/images/indi/indiwebmanager.png)
 
-The Web Application is based on [Bottle Py](http://bottlepy.org)
+The Web Application is based on [FastAPI](https://fastapi.tiangolo.com/)
 micro-framework. It has a built-in webserver and by default listens on port 8624.
 
 # Installation
@@ -123,208 +123,21 @@ startup of INDI server for a particular profile when the device boots up or
 when invoked manually via the **systemctl** command, check the **Auto Start**
 checkbox.
 
-# API
+## API Documentation
 
-INDI Web Manager provides a RESTful API to control all aspects of the
-application. Data communication is via JSON messages. All URLs are appended to
-the hostname:port running the INDI Web Manager.
+INDI Web Manager now uses FastAPI, which automatically generates interactive API documentation.
 
-## INDI Server Methods
+To access the API documentation, navigate to the `/docs` endpoint (Swagger UI) or the `/redoc` endpoint (ReDoc) in your web browser after starting the application.
 
-### Get Server Status
+For example, if the INDI Web Manager is running locally on port 8624, you can access the documentation at:
 
-| URL                | Method | Return                              | Format                                           |
-| ------------------ | ------ | ----------------------------------- | ------------------------------------------------ |
-| /api/server/status | GET    | INDI server status (running or not) | {'server': bool, 'active_profile': profile_name} |
+[http://localhost:8624/docs](http://localhost:8624/docs) or [http://localhost:8624/redoc](http://localhost:8624/redoc)
 
-**Example:** curl http://localhost:8624/api/server/status
-**Reply:** [{"status": "False"}, {"active_profile": ""}]
+The `/docs` and `/redoc` pages provide user-friendly interfaces to explore the available API endpoints, their parameters, and expected responses. You can also directly interact with the API from the `/docs` page to test the endpoints.
 
-### Start Server
+![Screenshot of FastAPI Swagger UI at /docs](indiweb/views/img/docs_screenshot.png)
 
-| URL                       | Method | Return | Format |
-| ------------------------- | ------ | ------ | ------ |
-| /api/server/\<name>/start | POST   | None   | []     |
-
-Where name is the equipment profile name to start.
-
-**Example:** curl -X POST http://localhost:8624/api/server/start/Simulators
-**Reply:** None
-
-### Stop Server
-
-| URL              | Method | Return | Format |
-| ---------------- | ------ | ------ | ------ |
-| /api/server/stop | POST   | None   | []     |
-
-### Get running drivers list
-
-| URL                 | Method | Return                                                   | Format |
-| ------------------- | ------ | -------------------------------------------------------- | ------ |
-| /api/server/drivers | GET    | Returns an array for all the locally **running** drivers |
-
-The format is as following:
-
-- **Name**: Driver name. If no label is specified, the driver uses this default name.
-- **Label**: If specified, set the driver name to this label.
-- **Skeleton**: XML Skeleton path which is used by some drivers (e.g. EQMod)
-- **Version**: Driver version.
-- **Binary**: Executable driver binary
-- **Family**: Category of driver (Telescopes, CCDs, Domes..etc)
-- **Custom**: True if the driver is custom, false otherwise
-
-**Example:** curl http://localhost:8624/api/server/drivers
-**Reply:** [{"name": "Telescope Simulator", "label": "Telescope Simulator", "skeleton": null, "version": "1.0", "binary": "indi_simulator_telescope", "family": "Telescopes", "custom": false}, {"name": "CCD Simulator", "label": "CCD Simulator", "skeleton": null, "version": "1.0", "binary": "indi_simulator_ccd", "family": "CCDs", "custom": false}, {"name": "Focuser Simulator", "label": "Focuser Simulator", "skeleton": null, "version": "1.0", "binary": "indi_simulator_focus", "family": "Focusers", "custom": false}]
-
-## Profiles
-
-### Add new profile
-
-| URL                   | Method | Return | Format |
-| --------------------- | ------ | ------ | ------ |
-| /api/profiles/\<name> | POST   | None   | None   |
-
-To add a profile named **foo**:
-
-```
-curl -H "Content-Type: application/json" -X POST http://localhost:8624/api/profiles/foo
-```
-
-### Delete profile
-
-| URL                   | Method | Return | Format |
-| --------------------- | ------ | ------ | ------ |
-| /api/profiles/\<name> | DELETE | None   | None   |
-
-To delete a profile named **foo**:
-
-```
-curl -X DELETE http://localhost:8624/api/profiles/foo
-```
-
-### Get All Profiles
-
-| URL           | Method | Return               | Format                                                                       |
-| ------------- | ------ | -------------------- | ---------------------------------------------------------------------------- |
-| /api/profiles | GET    | Returns all profiles | [{"port": number, "id": ID, "autostart": number, "name": profile_name}, ...] |
-
-**Example:** curl http://localhost:8624/api/profiles
-**Reply:** [{"port": 7624, "id": 1, "autostart": 0, "autoconnect": 0, "name": "Simulators"}, {"port": 7624, "id": 2, "autostart": 0, "name": "EQ5"}]
-
-### Get One Profile
-
-| URL                   | Method | Return              | Format |
-| --------------------- | ------ | ------------------- | ------ |
-| /api/profiles/\<name> | GET    | Returns one Profile |
-
-**Example:** curl http://localhost:8624/api/profiles/Simulators
-**Reply:** {"id": 1, "name": "Simulators", "port": 7624, "autostart": 0, "autoconnect": 0}
-
-### Update One Profile
-
-| URL                   | Method | Return                                            | Format |
-| --------------------- | ------ | ------------------------------------------------- | ------ |
-| /api/profiles/\<name> | PUT    | Update profile info (port, autostar, autoconnect) |
-
-**Example:** curl -H 'Content-Type: application/json' -X PUT -d '{"port":9000,"autostart":1,"autoconnect":0}' http://localhost:8624/api/profiles/Simulators
-**Reply:** None
-
-### Save drivers to profile
-
-| URL                           | Method | Return                                      | Format |
-| ----------------------------- | ------ | ------------------------------------------- | ------ |
-| /api/profiles/\<name>/drivers | POST   | Save local and remote drivers to a profile. |
-
-If profile does not exist, it is created. It expects an array of drivers.
-
-- Local drivers must define the _label_ attribute.
-- Remote drivers must define the _remote_ attribute.
-
-For example:
-[{"label":"Pegasus UPB"},{"remote":"astrometry@myremoteobservatory.com"}]
-
-To add the drivers above to a profile named **My Obs**, we call the following.
-**Example:** curl -H 'Content-Type: application/json' -X POST -d '[{"label":"Pegasus UPB"},{"remote":"astrometry@myremoteobservatory.com"}]' http://localhost:8624/api/profiles/My%20Obs/drivers
-**Reply:** None
-
-## Drivers
-
-### List all Groups
-
-| URL                 | Method | Return                    | Format |
-| ------------------- | ------ | ------------------------- | ------ |
-| /api/drivers/groups | GET    | Get the driver categories |
-
-**Example:** curl http://localhost:8624/api/drivers/groups
-**Reply:** ["Adaptive Optics", "Agent", "Auxiliary", "CCDs", "Detectors", "Domes", "Filter Wheels", "Focusers", "Spectrographs", "Telescopes", "Weather"]
-
-### List all drivers
-
-| URL          | Method | Return                          | Format |
-| ------------ | ------ | ------------------------------- | ------ |
-| /api/drivers | GET    | Get all the drivers information |
-
-**Example:** curl http://localhost:8624/api/drivers
-**Reply:** [{"name": "AAG Cloud Watcher", "label": "AAG Cloud Watcher", "skeleton": null, "version": "1.4", "binary": "indi_aagcloudwatcher", "family": "Weather", "custom": false}, {"name": "ASI EFW", "label": "ASI EFW", "skeleton": null, "version": "0.9", "binary": "indi_asi_wheel", "family": "Filter Wheels", "custom": false}.....]
-
-### Start specific driver
-
-| URL                         | Method | Return                                                     | Format |
-| --------------------------- | ------ | ---------------------------------------------------------- | ------ |
-| /api/drivers/start/\<label> | POST   | Start a specific driver if INDI server is already running. |
-
-All spaces must be encoded with %20 as per URI standards.
-
-**Example:** http://localhost:8624/api/drivers/start/Pegasus%20UPB
-**Reply:** None
-
-### Stop specific driver
-
-| URL                        | Method | Return                                                    | Format |
-| -------------------------- | ------ | --------------------------------------------------------- | ------ |
-| /api/drivers/stop/\<label> | POST   | Stop a specific driver if INDI server is already running. |
-
-All spaces must be encoded with %20 as per URI standards.
-
-**Example:** http://localhost:8624/api/drivers/stop/Pegasus%20UPB
-**Reply:** None
-
-### Restart specific driver
-
-| URL                           | Method | Return                                                       | Format |
-| ----------------------------- | ------ | ------------------------------------------------------------ | ------ |
-| /api/drivers/restart/\<label> | POST   | Restart a specific driver if INDI server is already running. |
-
-All spaces must be encoded with %20 as per URI standards.
-
-**Example:** http://localhost:8624/api/drivers/restart/Pegasus%20UPB
-**Reply:** None
-
-## System Commands
-
-### Reboot the system
-
-| URL                | Method | Return                                                 | Format |
-| ------------------ | ------ | ------------------------------------------------------ | ------ |
-| /api/system/reboot | POST   | Reboot the system on which the INDI server is running. |
-
-The driver and indi server are closed.
-
-**Example:** http://localhost:8624/api/system/reboot
-**Reply:** None
-
-### Poweroff the system
-
-| URL                  | Method | Return                                                     | Format |
-| -------------------- | ------ | ---------------------------------------------------------- | ------ |
-| /api/system/poweroff | POST   | powers off the system on which the INDI server is running. |
-
-The driver and indi server are closed.
-
-**Example:** http://localhost:8624/api/system/poweroff
-**Reply:** None
-
-# Development
+## Development
 
 To run indiweb directly from the source directory make sure prerequisits are
 installed and use:

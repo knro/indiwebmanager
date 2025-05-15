@@ -1,4 +1,3 @@
-% import socket
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,8 +22,14 @@
 <body>
 
   <div class="container">
-
-    <h4>{{hostname}} INDI Web Manager</h4>
+    <div class="row" style="align-items: center;">
+      <div class="col-sm-6">
+        <h4>{{hostname}} INDI Web Manager</h4>
+        </div>
+        <div class="col-sm-6 text-right">
+          <a href="/docs" class="btn btn-default" style="margin-top: 10px;">API</a>
+        </div>
+      </div>
     <!-- <form> !-->
 
       <div id="firstrow" class="row">
@@ -33,13 +38,13 @@
          <label>Equipment Profile:</label>
          <div class="input-group">
            <select onchange="loadCurrentProfileDrivers()" id="profiles" class="form-control">
-%for profile in profiles:
-    %if saved_profile == profile['name']:
+{% for profile in profiles %}
+    {% if saved_profile == profile['name'] %}
         <option selected>{{profile['name']}}</option>
-    %else:
+    {% else %}
         <option>{{profile['name']}}</option>
-    %end
-%end
+    {% endif %}
+{% endfor %}
            </select>
            <span class="input-group-btn">
              <button class="btn btn-default" onCLick="saveProfile()" data-toggle="tooltip" title="Save Profile"><span class="glyphicon glyphicon-save" aria-hidden="true"></span></button>
@@ -71,21 +76,21 @@
      <div class="form-group">
      <label for="drivers" class="control-label">Drivers:</label>
        <select id="drivers_list" class="form-control selectpicker show-tick" data-live-search="true" title="Select drivers..." data-selected-text-format="count > 5" multiple>
-%for family,driver_list in sorted(drivers.items()):
+{% for family,driver_list in sorted(drivers.items()) %}
        <optgroup label="{{family}}">
-      %for driver in driver_list:
+      {% for driver in driver_list %}
         <option value="{{driver}}" data-tokens="{{driver}}">{{driver}}</option>
-      %end
+      {% endfor %}
        </optgroup>
-%end
+{% endfor %}
        </select>
        </div>
      </div>
 
         <div class="col-sm-6">
             <div class="form-group">
-            <label for="serverPort" class="control-label">Port:</label>
-            <input id="profile_port" onChange="saveProfileInfo()" class="form-control" type="text" value="7624">
+                <label for="serverPort" class="control-label">Port:</label>
+                <input id="profile_port" onChange="saveProfileInfo()" class="form-control" type="text" value="7624">
             </div>
         </div>
 
@@ -119,6 +124,8 @@
             </div>
         </div>
     </div>
+
+
   </div>
 
   <br />

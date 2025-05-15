@@ -6,6 +6,16 @@ from . import __version__
 
 
 def dict_factory(cursor, row):
+    """
+    A factory function to return rows as dictionaries.
+
+    Args:
+        cursor (sqlite3.Cursor): The cursor object.
+        row (tuple): The row data.
+
+    Returns:
+        dict: A dictionary representing the row.
+    """
     d = {}
     for idx, col in enumerate(cursor.description):
         d[col[0]] = row[idx]
@@ -13,7 +23,19 @@ def dict_factory(cursor, row):
 
 
 class Database(object):
+    """
+    A class to manage the SQLite database for indiwebmanager.
+    """
     def __init__(self, filename):
+        """
+        Initializes the Database connection and creates/updates tables.
+
+        Args:
+            filename (str): The path to the SQLite database file.
+
+        Raises:
+            OSError: If the directory cannot be created and the error is not EEXIST.
+        """
         # create the directory if it does not exist
         db_dir = os.path.dirname(filename)
         try:
@@ -33,6 +55,12 @@ class Database(object):
         self.create(filename)
 
     def update(self):
+        """
+        Updates the database schema based on the current version.
+
+        Handles:
+            sqlite3.Error: If there are issues with database operations during the update.
+        """
         c = self.__conn.cursor()
         # Check if we have a version table.
         try:
@@ -55,6 +83,15 @@ class Database(object):
             pass
 
     def create(self, filename):
+        """
+        Creates the necessary database tables if they do not exist.
+
+        Args:
+            filename (str): The path to the SQLite database file.
+
+        Handles:
+            sqlite3.Error: If there are issues with database operations during table creation.
+        """
         c = self.__conn.cursor()
         # Check if we have a version table. If not, then the scheme is too old and needs updating
         try:
@@ -99,26 +136,49 @@ class Database(object):
         c.close()
 
     def get_autoprofile(self):
-        """Get auto start profile"""
+        """
+        Gets the auto-start profile from the database.
+
+        Returns:
+            str: The name of the auto-start profile, or an empty string if none is set.
+        """
 
         cursor = self.__conn.execute('SELECT profile FROM autostart')
         result = cursor.fetchone()
         return result['profile'] if result else ''
 
     def get_profiles(self):
-        """Get all profiles from database"""
+        """
+        Gets all profiles from the database.
+
+        Returns:
+            list: A list of dictionaries, where each dictionary represents a profile.
+        """
 
         cursor = self.__conn.execute('SELECT * FROM profile')
         return cursor.fetchall()
 
     def get_custom_drivers(self):
-        """Get all custom drivers from database"""
+        """
+        Gets all custom drivers from the database.
+
+        Returns:
+            list: A list of dictionaries, where each dictionary represents a custom driver.
+        """
 
         cursor = self.__conn.execute('SELECT * FROM custom')
         return cursor.fetchall()
 
     def get_profile_drivers_labels(self, name):
-        """Get all drivers labels for a specific profile from database"""
+        """
+        Gets all driver labels for a specific profile from the database.
+
+        Args:
+            name (str): The name of the profile.
+
+        Returns:
+            list: A list of dictionaries, where each dictionary contains a driver label.
+        """
 
         cursor = self.__conn.execute(
             'SELECT label FROM driver '
@@ -126,7 +186,15 @@ class Database(object):
         return cursor.fetchall()
 
     def get_profile_remote_drivers(self, name):
-        """Get remote drivers list for a specific profile"""
+        """
+        Gets the list of remote drivers for a specific profile.
+
+        Args:
+            name (str): The name of the profile.
+
+        Returns:
+            list: A list of dictionaries, where each dictionary contains a remote drivers string.
+        """
 
         cursor = self.__conn.execute(
             'SELECT drivers FROM remote '
@@ -134,7 +202,15 @@ class Database(object):
         return cursor.fetchall()
 
     def delete_profile(self, name):
-        """Delete Profile"""
+        """
+        Deletes a profile and its associated drivers from the database.
+
+        Args:
+            name (str): The name of the profile to delete.
+
+        Handles:
+            sqlite3.Error: If there are issues with database operations during deletion.
+        """
 
         c = self.__conn.cursor()
         c.execute('DELETE FROM driver WHERE profile='
@@ -144,7 +220,18 @@ class Database(object):
         c.close()
 
     def add_profile(self, name):
-        """Add Profile"""
+        """
+        Adds a new profile to the database.
+
+        Args:
+            name (str): The name of the profile to add.
+
+        Returns:
+            int: The row ID of the newly added profile.
+
+        Handles:
+            sqlite3.IntegrityError: If a profile with the same name already exists.
+        """
 
         c = self.__conn.cursor()
         try:
@@ -155,14 +242,34 @@ class Database(object):
         return c.lastrowid
 
     def get_profile(self, name):
-        """Get profile info"""
+        """
+        Gets the information for a specific profile.
+
+        Args:
+            name (str): The name of the profile.
+
+        Returns:
+            dict: A dictionary representing the profile, or None if not found.
+        """
 
         cursor = self.__conn.execute('SELECT * FROM profile WHERE name=?',
                                      (name,))
         return cursor.fetchone()
 
     def update_profile(self, name, port, autostart=False, autoconnect=False, scripts=""):
-        """Update profile info"""
+        """
+        Updates the information for a specific profile.
+
+        Args:
+            name (str): The name of the profile to update.
+            port (int): The port number for the profile.
+            autostart (bool, optional): Whether the profile should autostart. Defaults to False.
+            autoconnect (bool, optional): Whether the profile should autoconnect. Defaults to False.
+            scripts (str, optional): Scripts associated with the profile. Defaults to "".
+
+        Handles:
+            sqlite3.Error: If there are issues with database operations during the update.
+        """
 
         c = self.__conn.cursor()
         if autostart:
@@ -174,7 +281,16 @@ class Database(object):
         c.close()
 
     def save_profile_drivers(self, name, drivers):
-        """Save profile drivers"""
+        """
+        Saves the drivers associated with a profile.
+
+        Args:
+            name (str): The name of the profile.
+            drivers (list): A list of dictionaries representing the drivers.
+
+        Handles:
+            sqlite3.Error: If there are issues with database operations during saving.
+        """
 
         c = self.__conn.cursor()
         c.execute('SELECT id FROM profile WHERE name=?', (name,))
@@ -198,7 +314,16 @@ class Database(object):
         c.close()
 
     def save_profile_custom_driver(self, driver):
-        """Save custom profile driver"""
+        """
+        Saves a custom profile driver to the database.
+
+        Args:
+            driver (dict): A dictionary representing the custom driver.
+
+        Handles:
+            sqlite3.Error: If there are issues with database operations during saving,
+                           including ignoring duplicates.
+        """
 
         c = self.__conn.cursor()
         try:
