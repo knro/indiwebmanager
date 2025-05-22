@@ -288,7 +288,7 @@ async def save_profile_drivers(name: str, request: Request):
     return {"message": f"Drivers saved for profile {name}"}
 
 
-@app.post('/api/profiles/custom', tags=["Profiles"])
+@app.post('/api/profiles/custom/add', tags=["Profiles"])
 async def save_profile_custom_driver(request: Request):
     """
     Adds a custom driver to the database and updates the driver collection.
