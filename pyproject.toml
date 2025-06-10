@@ -26,7 +26,7 @@ classifiers = [
     'Topic :: Scientific/Engineering :: Astronomy',
 ]
 dependencies = [
-    "requests==2.32.2",
+    "requests==2.32.4",
     "psutil==6.0.0",
     "bottle==0.12.25",
     "importlib_metadata==8.5.0"
