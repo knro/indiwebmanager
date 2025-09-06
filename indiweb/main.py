@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
@@ -87,6 +88,14 @@ db = Database(db_path)
 collection.parse_custom_drivers(db.get_custom_drivers())
 
 app = FastAPI(title="INDI Web Manager", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
 
 # Serve static files
 app.mount("/static", StaticFiles(directory=views_path), name="static")
