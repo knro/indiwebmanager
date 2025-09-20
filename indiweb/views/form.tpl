@@ -117,6 +117,14 @@
     <div class="row">
         <div class="col-sm-6">
             <div class="form-group">
+                <label class="control-label">Connected Devices:</label>
+                <div id="devices_list" class="well">
+                    <p class="text-muted">No devices connected. Start a profile to see connected devices.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="form-group">
                 <label class="control-label">Poweroff Reboot:</label>
                 <button id="system_reboot" onClick="rebootSystem()" class="btn btn-default" data-toggle="tooltip" title="Reboot remote System"><span class="glyphicon glyphicon-repeat" aria-hidden="true"></span></button>
                 <button id="system_poweroff" onClick="poweroffSystem()" class="btn btn-default" data-toggle="tooltip" title="PowerOff remote System"><span class="glyphicon glyphicon-off" aria-hidden="true"></span></button>

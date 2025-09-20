@@ -313,6 +313,7 @@ function getStatus()
         {
             $("#server_command").html("<span class='glyphicon glyphicon-cog' aria-hidden='true'></span> Start");
             $("#server_notify").html("<p class='alert alert-success'>Server is offline.</p>");
+            $("#devices_list").html("<p class=\"text-muted\">No devices connected. Start a profile to see connected devices.</p>");
         }
 
     });
@@ -347,6 +348,53 @@ function getActiveDrivers()
         }
     });
 
+    // Also update the devices list
+    getConnectedDevices();
+}
+
+function getConnectedDevices()
+{
+    $.getJSON("api/devices", function (devices)
+    {
+        if (devices && devices.length > 0)
+        {
+            var devicesList = "<ul class=\"list-unstyled\">";
+            $.each(devices, function (i, deviceInfo)
+            {
+                // Handle both new format (simple string array) and old format (object array)
+                var deviceName;
+                if (typeof deviceInfo === 'string') {
+                    deviceName = deviceInfo;
+                } else if (deviceInfo.device) {
+                    deviceName = deviceInfo.device;
+                } else {
+                    deviceName = deviceInfo.toString();
+                }
+
+                devicesList += "<li>" +
+                    "<a href=\"/device/" + encodeURIComponent(deviceName) + "\" " +
+                    "target=\"_blank\" class=\"btn btn-link\" style=\"text-decoration: none;\">" +
+                    "<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span> " +
+                    deviceName + " Control Panel</a></li>";
+            });
+            devicesList += "</ul>";
+            $("#devices_list").html(devicesList);
+        }
+        else
+        {
+            $("#devices_list").html("<p class=\"text-muted\">No devices connected. Start a profile to see connected devices.</p>");
+        }
+    }).fail(function()
+    {
+        $("#devices_list").html("<p class=\"text-muted\">No devices connected. Start a profile to see connected devices.</p>");
+    });
+}
+
+function openDeviceControlPanel(deviceName)
+{
+    // Open device control panel in a new window/tab
+    var url = "/device/" + encodeURIComponent(deviceName);
+    window.open(url, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
 }
 
 

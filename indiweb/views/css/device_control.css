@@ -1,0 +1,673 @@
+/* Device Control Panel CSS */
+
+.property-group {
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+  background-color: #fafafa;
+}
+
+.property-group h4 {
+  margin-top: 0;
+  color: #555;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 5px;
+}
+
+.property-item {
+  margin-bottom: 15px;
+  padding: 12px;
+  border: 1px solid #e7e7e7;
+  border-radius: 3px;
+  background-color: white;
+}
+
+.property-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.property-label {
+  font-weight: bold;
+  margin-right: 10px;
+  min-width: 150px;
+  color: #333;
+}
+
+.property-state {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  border: 1px solid #ccc;
+}
+
+.state-idle {
+  background-color: #d9d9d9;
+}
+
+.state-ok {
+  background-color: #5cb85c;
+}
+
+.state-busy {
+  background-color: #f0ad4e;
+}
+
+.state-alert {
+  background-color: #d9534f;
+}
+
+.property-elements {
+  margin-left: 20px;
+}
+
+.element-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 5px 0;
+}
+
+.element-label {
+  min-width: 140px;
+  margin-right: 10px;
+  font-weight: normal;
+  color: #666;
+}
+
+.element-input {
+  margin-right: 10px;
+  max-width: 200px;
+}
+
+.property-buttons {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+.switch-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin: 5px 0;
+}
+
+.switch-group label {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+.light-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  border: 2px solid #ccc;
+  vertical-align: middle;
+}
+
+.connection-controls {
+  margin-bottom: 25px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.connection-controls .form-group {
+  margin-bottom: 0;
+}
+
+.connection-status-connected {
+  background-color: #5cb85c !important;
+  color: white;
+}
+
+.connection-status-disconnected {
+  background-color: #d9534f !important;
+  color: white;
+}
+
+.connection-status-busy {
+  background-color: #f0ad4e !important;
+  color: white;
+}
+
+.device-messages {
+  height: 200px;
+  overflow-y: auto;
+  background-color: #f8f8f8;
+  padding: 12px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.message-timestamp {
+  color: #999;
+  margin-right: 8px;
+}
+
+.message-device {
+  color: #0066cc;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.message-text {
+  color: #333;
+}
+
+.message-entry {
+  padding: 2px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.message-entry:last-child {
+  border-bottom: none;
+}
+
+.message-info {
+  background-color: #f8f9fa;
+}
+
+.message-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.message-warning {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.message-error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.message-source {
+  color: #0066cc;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.nav-tabs {
+  border-bottom: 2px solid #ddd;
+  margin-bottom: 0;
+}
+
+.nav-tabs > li > a {
+  border-radius: 4px 4px 0 0;
+  color: #555;
+}
+
+.nav-tabs > li.active > a {
+  background-color: #fff;
+  border-color: #ddd #ddd transparent;
+  border-width: 2px 1px 1px 1px;
+  color: #333;
+  font-weight: bold;
+}
+
+.tab-content {
+  padding: 20px 0;
+  background-color: white;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  border-radius: 0 0 4px 4px;
+  min-height: 400px;
+}
+
+.property-readonly {
+  background-color: #f9f9f9;
+  border-left: 4px solid #ccc;
+}
+
+.property-writeonly {
+  border-left: 4px solid #428bca;
+}
+
+.property-readwrite {
+  border-left: 4px solid #5cb85c;
+}
+
+.btn-property {
+  font-size: 12px;
+  padding: 4px 12px;
+}
+
+/* Read-only property styling */
+.element-value {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  background-color: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #e9ecef;
+  display: inline-block;
+  min-width: 60px;
+}
+
+.switch-element {
+  margin-right: 15px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.switch-on {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+.switch-off {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+/* Switch rule type styles */
+.switch-rule-info {
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+/* Radio button style switches (OneOfMany, AtMostOne) */
+.switch-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.switch-radio-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.switch-radio-item:hover {
+  background-color: #f8f9fa;
+}
+
+.switch-radio {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #007bff;
+  display: inline-block;
+  margin-right: 8px;
+  position: relative;
+  vertical-align: middle;
+}
+
+.switch-radio.radio-selected::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #007bff;
+}
+
+.switch-radio.radio-unselected {
+  background-color: transparent;
+}
+
+/* Checkbox style switches (AnyOfMany) */
+.switch-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.switch-checkbox-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.switch-checkbox-item:hover {
+  background-color: #f8f9fa;
+}
+
+.switch-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #007bff;
+  border-radius: 3px;
+  display: inline-block;
+  margin-right: 8px;
+  position: relative;
+  vertical-align: middle;
+}
+
+.switch-checkbox.checkbox-checked {
+  background-color: #007bff;
+}
+
+.switch-checkbox.checkbox-checked::before {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.switch-checkbox.checkbox-unchecked {
+  background-color: transparent;
+}
+
+/* Optional button groups (AtMostOne) styling */
+.switch-optional .switch-button.button-active {
+  background-color: #6c757d;
+  border-color: #545b62;
+}
+
+.switch-optional .switch-button.button-active:hover {
+  background-color: #545b62;
+}
+
+/* Switch status indicators */
+.switch-status {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 3px;
+  min-width: 30px;
+  text-align: center;
+}
+
+.switch-status.status-on {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.switch-status.status-off {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Switch control grouping */
+.switch-control {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.switch-control .element-label {
+  margin-left: 0;
+  margin-right: 8px;
+}
+
+/* Button group style switches (OneOfMany) */
+.switch-button-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 5px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.switch-button {
+  padding: 8px 16px;
+  border: none;
+  border-right: 1px solid #ddd;
+  background-color: #ffffff;
+  color: #495057;
+  font-size: 14px;
+  font-weight: normal;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: auto;
+}
+
+.switch-button:hover {
+  background-color: #e9ecef;
+}
+
+.switch-button.button-active {
+  background-color: #28a745;
+  color: white;
+  font-weight: bold;
+  border: 1px solid #1e7e34;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+  transform: translateY(1px);
+}
+
+.switch-button.button-active:hover {
+  background-color: #218838;
+}
+
+.switch-button.button-inactive {
+  background-color: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transform: translateY(0px);
+}
+
+.switch-button:first-child {
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+
+.switch-button:last-child {
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+  border-right: none;
+}
+
+
+/* Rule type specific styling */
+
+
+
+/* Enhanced visual feedback */
+.switch-radio-item.selected,
+.switch-checkbox-item.selected {
+  background-color: #e7f3ff;
+  border: 1px solid #b3d9ff;
+}
+
+/* Disabled state for read-only properties */
+.property-readonly .switch-radio,
+.property-readonly .switch-checkbox,
+.property-readonly .switch-button {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.property-readonly .switch-radio-item,
+.property-readonly .switch-checkbox-item {
+  cursor: not-allowed;
+}
+
+.property-readonly .switch-radio-item:hover,
+.property-readonly .switch-checkbox-item:hover {
+  background-color: transparent;
+}
+
+.property-readonly .switch-button:hover {
+  background-color: inherit !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .element-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .element-label {
+    min-width: auto;
+    margin-bottom: 5px;
+  }
+
+  .element-input {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .switch-group {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .switch-radio-group,
+  .switch-checkbox-group {
+    gap: 6px;
+  }
+
+  .switch-radio-item,
+  .switch-checkbox-item {
+    padding: 6px 8px;
+  }
+
+  .switch-button-group {
+    flex-direction: column;
+    display: flex;
+    align-items: flex-start;
+    width: auto;
+  }
+
+  .switch-button {
+    border-radius: 0 !important;
+    border-right: none !important;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+    width: auto;
+    min-width: 120px;
+  }
+
+  .switch-button:first-child {
+    border-top-left-radius: 3px !important;
+    border-top-right-radius: 3px !important;
+  }
+
+  .switch-button:last-child {
+    border-bottom-left-radius: 3px !important;
+    border-bottom-right-radius: 3px !important;
+    border-bottom: none !important;
+  }
+
+  .property-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .property-label {
+    min-width: auto;
+    margin-bottom: 5px;
+  }
+}
+
+/* Loading animation */
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.spinner {
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Property type indicators */
+.property-type-text::before {
+  content: "T";
+  background-color: #5bc0de;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.property-type-number::before {
+  content: "#";
+  background-color: #f0ad4e;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.property-type-switch::before {
+  content: "S";
+  background-color: #5cb85c;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.property-type-light::before {
+  content: "L";
+  background-color: #d9534f;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 8px;
+}

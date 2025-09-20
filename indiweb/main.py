@@ -20,6 +20,7 @@ from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
 from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
 from .database import Database
 from .device import Device
+from .indi_client import get_indi_client, start_indi_client, stop_indi_client
 
 # default settings
 WEB_HOST = '0.0.0.0'
@@ -90,7 +91,6 @@ app = FastAPI(title="INDI Web Manager", version="1.0.0")
 
 # Serve static files
 app.mount("/static", StaticFiles(directory=views_path), name="static")
-app.mount("/favicon.ico", StaticFiles(directory=views_path), name="favicon.ico")
 
 
 saved_profile = None
@@ -377,6 +377,17 @@ async def start_server(profile: str, response: Response):
     active_profile = profile
     response.set_cookie(key="indiserver_profile", value=profile, max_age=3600000, path='/')
     start_profile(profile)
+
+    # Start INDI client connection after a short delay
+    import asyncio
+    async def start_client():
+        await asyncio.sleep(3)  # Wait for server to start
+        profile_info = db.get_profile(profile)
+        port = profile_info.get('port', 7624) if profile_info else 7624
+        start_indi_client('localhost', port)
+
+    asyncio.create_task(start_client())
+
     return {"message": f"INDI server started for profile {profile}"}
 
 
@@ -386,6 +397,7 @@ async def stop_server():
     Stops the INDI server.
     """
     indi_server.stop()
+    stop_indi_client()  # Also stop the INDI client
 
     global active_profile
     active_profile = ""
@@ -560,7 +572,180 @@ async def get_devices():
     Returns:
         str: A JSON string representing the connected devices.
     """
-    return JSONResponse(content=indi_device.get_devices())
+    # Try INDI client first, fallback to old method
+    client = get_indi_client()
+    if client.is_connected():
+        devices = client.get_devices()
+        return JSONResponse(content=devices)
+    else:
+        return JSONResponse(content=indi_device.get_devices())
+
+
+@app.get('/device/{device_name}', response_class=HTMLResponse, tags=["Web Interface"])
+async def device_control_panel(request: Request, device_name: str):
+    """
+    Renders the device control panel page.
+
+    Args:
+        device_name (str): The name of the device to control.
+
+    Returns:
+        str: The rendered HTML template.
+    """
+    try:
+        logging.info(f"Loading device control panel for: {device_name}")
+
+        # Check if template file exists
+        import os
+        template_path = os.path.join(views_path, "device_control.tpl")
+        if not os.path.exists(template_path):
+            raise HTTPException(status_code=500, detail=f"Template not found: {template_path}")
+
+        return templates.TemplateResponse(
+            "device_control.tpl",
+            {"request": request, "device_name": device_name}
+        )
+    except Exception as e:
+        logging.error(f"Error loading device control panel for {device_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error loading device control panel: {str(e)}")
+
+
+@app.get('/api/devices/{device_name}/structure', tags=["Devices"])
+async def get_device_structure(device_name: str):
+    """
+    Gets the property structure for a specific device.
+
+    Args:
+        device_name (str): The name of the device.
+
+    Returns:
+        dict: A dictionary containing the device property structure grouped by property groups.
+    """
+    client = get_indi_client()
+    if not client.is_connected():
+        # Try to connect to INDI server
+        if indi_server.is_running():
+            port = 7624  # Default INDI port
+            profiles = db.get_profiles()
+            for profile in profiles:
+                if profile.get('name') == active_profile:
+                    port = profile.get('port', 7624)
+                    break
+
+            if not start_indi_client('localhost', port):
+                raise HTTPException(status_code=503, detail="Cannot connect to INDI server")
+        else:
+            raise HTTPException(status_code=503, detail="INDI server is not running")
+
+    # Wait for device to be available
+    if not client.wait_for_device(device_name, timeout=3):
+        raise HTTPException(status_code=404, detail=f"Device '{device_name}' not found or not available")
+
+    structure = client.get_device_structure(device_name)
+    if not structure:
+        raise HTTPException(status_code=404, detail="Device found but no properties available yet. Try refreshing.")
+
+    return JSONResponse(content=structure)
+
+
+@app.get('/api/devices/{device_name}/dirty', tags=["Devices"])
+async def get_dirty_properties(device_name: str):
+    """
+    Gets list of properties that have changed since last check.
+
+    Args:
+        device_name (str): The name of the device.
+
+    Returns:
+        list: A list of property names that have changed.
+    """
+    client = get_indi_client()
+    if not client.is_connected():
+        raise HTTPException(status_code=503, detail="INDI client not connected")
+
+    dirty_props = client.get_dirty_properties(device_name)
+    return JSONResponse(content=dirty_props)
+
+
+@app.post('/api/devices/{device_name}/properties/batch', tags=["Devices"])
+async def get_changed_properties(device_name: str, request: Request):
+    """
+    Gets current values for specified properties.
+
+    Args:
+        device_name (str): The name of the device.
+        request: The request containing the list of property names.
+
+    Returns:
+        dict: Current values for the specified properties.
+    """
+    client = get_indi_client()
+    if not client.is_connected():
+        raise HTTPException(status_code=503, detail="INDI client not connected")
+
+    data = await request.json()
+    property_names = data.get('properties', [])
+
+    if not property_names:
+        raise HTTPException(status_code=400, detail="No property names provided")
+
+    properties = client.get_changed_properties(device_name, property_names)
+    return JSONResponse(content=properties)
+
+
+@app.get('/api/devices/{device_name}/groups', tags=["Devices"])
+async def get_device_groups(device_name: str):
+    """
+    Gets property groups for a specific device.
+
+    Args:
+        device_name (str): The name of the device.
+
+    Returns:
+        dict: A dictionary containing device property groups.
+    """
+    client = get_indi_client()
+    if not client.is_connected():
+        raise HTTPException(status_code=503, detail="INDI client not connected")
+
+    properties = client.get_device_properties(device_name)
+    if not properties:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    # Group properties by group name
+    groups = {}
+    for prop_name, prop_data in properties.items():
+        group_name = prop_data.get('group', 'Main')
+        if group_name not in groups:
+            groups[group_name] = []
+        groups[group_name].append(prop_name)
+
+    return JSONResponse(content=groups)
+
+
+@app.get('/api/devices/{device_name}/properties/{property_name}', tags=["Devices"])
+async def get_device_property(device_name: str, property_name: str):
+    """
+    Gets a specific property for a device.
+
+    Args:
+        device_name (str): The name of the device.
+        property_name (str): The name of the property.
+
+    Returns:
+        dict: The property data.
+    """
+    client = get_indi_client()
+    if not client.is_connected():
+        raise HTTPException(status_code=503, detail="INDI client not connected")
+
+    property_data = client.get_property(device_name, property_name)
+    if not property_data:
+        raise HTTPException(status_code=404, detail="Property not found")
+
+    return JSONResponse(content=property_data)
+
+
 
 ###############################################################################
 # System control endpoints
