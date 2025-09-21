@@ -29,6 +29,50 @@
           </div>
         </div>
 
+        <!-- Legend -->
+        <div class="legend-section">
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Property Permissions</h5>
+              <div class="legend-horizontal">
+                <div class="legend-item">
+                  <span class="legend-border property-readonly-border"></span>
+                  <span>Read-only (grayish)</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-border property-readwrite-border"></span>
+                  <span>Read-write</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-border property-writeonly-border"></span>
+                  <span>Write-only</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <h5>Property States</h5>
+              <div class="legend-horizontal">
+                <div class="legend-item">
+                  <span class="property-state state-idle"></span>
+                  <span>Idle</span>
+                </div>
+                <div class="legend-item">
+                  <span class="property-state state-ok"></span>
+                  <span>OK</span>
+                </div>
+                <div class="legend-item">
+                  <span class="property-state state-busy"></span>
+                  <span>Busy</span>
+                </div>
+                <div class="legend-item">
+                  <span class="property-state state-alert"></span>
+                  <span>Alert</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Property Groups Tabs -->
         <ul class="nav nav-tabs" id="property-tabs" role="tablist">
           <!-- Tabs will be populated dynamically -->
@@ -76,6 +120,9 @@
 
       // Initialize message log
       addMessage("info", "Device control panel loaded", "System");
+
+      // Set up event handlers for copy and set buttons
+      setupPropertyControls();
     });
 
     function loadDeviceStructure() {
@@ -104,7 +151,7 @@
     }
 
     function checkForUpdates() {
-      $.getJSON("/api/devices/" + encodeURIComponent(deviceName) + "/dirty", function(dirtyProps) {
+      $.getJSON("/api/devices/" + encodeURIComponent(deviceName) + "/poll", function(dirtyProps) {
         if (dirtyProps && dirtyProps.length > 0) {
           console.log('Dirty properties:', dirtyProps);
           fetchUpdatedProperties(dirtyProps);
@@ -242,9 +289,9 @@
           var isOn = element.value === 'On' || element.value === 'ON';
 
           if (rule === 'OneOfMany' || rule === 'AtMostOne') {
-            // Update button group style
+            // Update button group style and remove blue clicked state
             var buttonSelector = '.switch-button[data-property="' + propName + '"][data-element="' + elemName + '"]';
-            $(buttonSelector).removeClass('button-active button-inactive')
+            $(buttonSelector).removeClass('button-active button-inactive button-clicked')
                            .addClass(isOn ? 'button-active' : 'button-inactive');
           } else if (rule === 'AnyOfMany') {
             // Update checkbox style
@@ -279,7 +326,17 @@
 
       for (var propName in groupProperties) {
         var prop = groupProperties[propName];
-        html += '<div class="property-item" id="prop-' + prop.name + '">';
+        // Determine permission class
+        var permClass = '';
+        if (prop.perm === 'ro') {
+          permClass = 'property-readonly';
+        } else if (prop.perm === 'wo') {
+          permClass = 'property-writeonly';
+        } else if (prop.perm === 'rw') {
+          permClass = 'property-readwrite';
+        }
+
+        html += '<div class="property-item ' + permClass + '" id="prop-' + prop.name + '">';
         html += generatePropertyContent(prop);
         html += '</div>';
       }
@@ -288,6 +345,16 @@
     }
 
     function generatePropertyContent(prop) {
+      // Determine permission class
+      var permClass = '';
+      if (prop.perm === 'ro') {
+        permClass = 'property-readonly';
+      } else if (prop.perm === 'wo') {
+        permClass = 'property-writeonly';
+      } else if (prop.perm === 'rw') {
+        permClass = 'property-readwrite';
+      }
+
       var html = '<div class="property-header">';
       html += '<span class="property-state state-' + (prop.state || 'idle') + '" data-property="' + prop.name + '"></span>';
       html += '<span class="property-label">' + (prop.label || prop.name) + '</span>';
@@ -315,37 +382,133 @@
 
     function generateTextProperty(prop) {
       var html = '<div class="property-elements">';
+      var isWritable = (prop.perm === 'rw' || prop.perm === 'wo');
+
       for (var elemName in prop.elements) {
         var elem = prop.elements[elemName];
         html += '<div class="element-row">';
         html += '<span class="element-label">' + (elem.label || elemName) + ':</span>';
-        html += '<span class="element-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
-        html += (elem.value || '(empty)');
-        html += '</span>';
+
+        if (isWritable) {
+          // Writable property: current value + input controls
+          html += '<div class="element-value-controls">';
+
+          // For read-write properties, show current value and copy button
+          if (prop.perm === 'rw') {
+            html += '<span class="element-value element-current-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
+            html += (elem.value || '(empty)');
+            html += '</span>';
+
+            html += '<button type="button" class="btn btn-xs btn-default copy-value-btn" ';
+            html += 'data-property="' + prop.name + '" data-element="' + elemName + '">↦</button>';
+          }
+
+          html += '<input type="text" class="form-control input-sm element-input" ';
+          html += 'data-property="' + prop.name + '" data-element="' + elemName + '" ';
+          html += 'placeholder="Enter text">';
+          html += '</div>';
+        } else {
+          // Read-only property: just the value
+          html += '<span class="element-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
+          html += (elem.value || '(empty)');
+          html += '</span>';
+        }
+
         html += '</div>';
       }
+
+      // Add set button for writable properties (inline after last element)
+      if (isWritable) {
+        html += '<div class="element-row">';
+        html += '<span class="element-label"></span>'; // Empty label for alignment
+        html += '<div class="property-set-control">';
+        html += '<button type="button" class="btn btn-sm btn-primary set-property-btn" ';
+        html += 'data-property="' + prop.name + '">Set</button>';
+        html += '</div>';
+        html += '</div>';
+      }
+
       html += '</div>';
       return html;
     }
 
     function generateNumberProperty(prop) {
       var html = '<div class="property-elements">';
+      var isWritable = (prop.perm === 'rw' || prop.perm === 'wo');
+
       for (var elemName in prop.elements) {
         var elem = prop.elements[elemName];
         html += '<div class="element-row">';
         html += '<span class="element-label">' + (elem.label || elemName) + ':</span>';
-        html += '<span class="element-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
-        // Use formatted_value if available, otherwise fall back to value
-        html += (elem.formatted_value || elem.value || '0');
-        html += '</span>';
-        if (elem.format) {
-          html += '<span class="text-muted"> (' + elem.format + ')</span>';
+
+        if (isWritable) {
+          // Writable property: current value + input controls
+          html += '<div class="element-value-controls">';
+
+          // For read-write properties, show current value and copy button
+          if (prop.perm === 'rw') {
+            html += '<span class="element-value element-current-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
+            html += (elem.formatted_value || elem.value || '0');
+            html += '</span>';
+
+            if (elem.format) {
+              html += '<span class="text-muted"> (' + elem.format + ')</span>';
+            }
+            if (elem.min !== undefined && elem.max !== undefined) {
+              html += '<small class="text-muted"> [' + elem.min + ' - ' + elem.max + ']</small>';
+            }
+
+            html += '<button type="button" class="btn btn-xs btn-default copy-value-btn" ';
+            html += 'data-property="' + prop.name + '" data-element="' + elemName + '">↦</button>';
+          } else {
+            // For write-only properties, show format and range info without current value
+            if (elem.format) {
+              html += '<span class="text-muted">(' + elem.format + ')</span>';
+            }
+            if (elem.min !== undefined && elem.max !== undefined) {
+              html += '<small class="text-muted"> [' + elem.min + ' - ' + elem.max + ']</small>';
+            }
+          }
+
+          // Use text input for %m formatted fields to avoid spin controls
+          var inputType = (elem.format && elem.format.includes('%m')) ? 'text' : 'number';
+          html += '<input type="' + inputType + '" class="form-control input-sm element-input" ';
+          html += 'data-property="' + prop.name + '" data-element="' + elemName + '" ';
+          if (inputType === 'number') {
+            if (elem.min !== undefined) html += 'min="' + elem.min + '" ';
+            if (elem.max !== undefined) html += 'max="' + elem.max + '" ';
+            if (elem.step !== undefined) html += 'step="' + elem.step + '" ';
+          }
+          html += 'placeholder="Enter value">';
+          html += '</div>';
+        } else {
+          // Read-only property: just the value
+          html += '<span class="element-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
+          html += (elem.formatted_value || elem.value || '0');
+          html += '</span>';
+
+          if (elem.format) {
+            html += '<span class="text-muted"> (' + elem.format + ')</span>';
+          }
+          if (elem.min !== undefined && elem.max !== undefined) {
+            html += '<small class="text-muted"> [' + elem.min + ' - ' + elem.max + ']</small>';
+          }
         }
-        if (elem.min !== undefined && elem.max !== undefined) {
-          html += '<small class="text-muted"> [' + elem.min + ' - ' + elem.max + ']</small>';
-        }
+
         html += '</div>';
       }
+
+      // Add set button for writable properties (inline after last element)
+      if (isWritable) {
+        html += '<div class="element-row">';
+        html += '<span class="element-label"></span>'; // Empty label for alignment
+        html += '<div class="property-set-control">';
+        html += '<button type="button" class="btn btn-sm btn-primary set-property-btn" ';
+        html += 'data-property="' + prop.name + '">Set</button>';
+        html += '</div>';
+        html += '</div>';
+      }
+
       html += '</div>';
       return html;
     }
@@ -462,7 +625,7 @@
       if (messageLog.length === 0) {
         messagesHtml = '<p class="text-muted">No messages yet...</p>';
       } else {
-        for (var i = messageLog.length - 1; i >= 0; i--) { // Show newest first
+        for (var i = 0; i < messageLog.length; i++) { // Show oldest first, newest last
           var msg = messageLog[i];
           var timeStr = formatTimestamp(msg.timestamp);
           var typeClass = "message-" + msg.type;
@@ -512,6 +675,148 @@
       var message = 'Switch "' + propName + '.' + elementName + '" (' +
                    (ruleDesc[rule] || rule) + ') set to: ' + newValue;
       addMessage("info", message, deviceName);
+    }
+
+    function setupPropertyControls() {
+      // Event delegation for copy value buttons
+      $(document).on('click', '.copy-value-btn', function() {
+        var propName = $(this).data('property');
+        var elemName = $(this).data('element');
+        var currentValueSpan = $('.element-current-value[data-property="' + propName + '"][data-element="' + elemName + '"]');
+        var inputField = $('.element-input[data-property="' + propName + '"][data-element="' + elemName + '"]');
+
+        var currentValue = currentValueSpan.text().trim();
+        // Extract numeric value from formatted display if needed
+        var numericValue = parseFloat(currentValue);
+        if (!isNaN(numericValue)) {
+          inputField.val(numericValue);
+        } else {
+          inputField.val(currentValue);
+        }
+
+        inputField.focus().select();
+        addMessage("info", 'Copied current value "' + currentValue + '" to input field for ' + propName + '.' + elemName, "System");
+      });
+
+      // Event delegation for set property buttons
+      $(document).on('click', '.set-property-btn', function() {
+        var propName = $(this).data('property');
+        var values = {};
+        var hasValues = false;
+
+        // Collect all input values for this property
+        $('.element-input[data-property="' + propName + '"]').each(function() {
+          var elemName = $(this).data('element');
+          var value = $(this).val().trim();
+          if (value !== '') {
+            values[elemName] = value;
+            hasValues = true;
+          }
+        });
+
+        if (!hasValues) {
+          addMessage("warning", "No values entered for property " + propName, "System");
+          return;
+        }
+
+        // Send the values to the backend
+        setPropertyValues(propName, values);
+      });
+
+      // Event delegation for switch button clicks
+      $(document).on('click', '.switch-button', function() {
+        var propName = $(this).data('property');
+        var elemName = $(this).data('element');
+
+        // Only handle clicks for writable properties
+        var propertyItem = $(this).closest('.property-item');
+        if (propertyItem.hasClass('property-readonly')) {
+          return; // Ignore clicks on read-only switches
+        }
+
+        // Add blue clicked state
+        $(this).addClass('button-clicked');
+
+        // Determine the switch rule and handle accordingly
+        var switchGroup = $(this).closest('.switch-button-group');
+        var rule = 'OneOfMany'; // Default
+        if (switchGroup.hasClass('switch-optional')) {
+          rule = 'AtMostOne';
+        }
+
+        // Send switch update to backend
+        setSwitchValue(propName, elemName, rule, $(this));
+      });
+    }
+
+    function setPropertyValues(propName, values) {
+      addMessage("info", "Setting property " + propName + " with values: " + JSON.stringify(values), "System");
+
+      $.ajax({
+        type: 'POST',
+        url: '/api/devices/' + encodeURIComponent(deviceName) + '/properties/' + encodeURIComponent(propName) + '/set',
+        data: JSON.stringify({ elements: values }),
+        contentType: 'application/json',
+        success: function(response) {
+          addMessage("success", "Property " + propName + " set successfully", deviceName);
+          // Clear the input fields after successful set
+          $('.element-input[data-property="' + propName + '"]').val('');
+        },
+        error: function(xhr, status, error) {
+          var errorMsg = xhr.responseJSON?.detail || error;
+          addMessage("error", "Failed to set property " + propName + ": " + errorMsg, "System");
+        }
+      });
+    }
+
+    function setSwitchValue(propName, elemName, rule, clickedButton) {
+      var values = {};
+
+      if (rule === 'OneOfMany') {
+        // OneOfMany: Only one can be active, turn off all others
+        values[elemName] = 'On';
+        // Find all other elements in this property and set them to Off
+        clickedButton.closest('.switch-button-group').find('.switch-button').each(function() {
+          var otherElemName = $(this).data('element');
+          if (otherElemName !== elemName) {
+            values[otherElemName] = 'Off';
+          }
+        });
+      } else if (rule === 'AtMostOne') {
+        // AtMostOne: Can turn off current, or turn on and turn off others
+        var isCurrentlyActive = clickedButton.hasClass('button-active');
+        if (isCurrentlyActive) {
+          // Turn off the currently active one
+          values[elemName] = 'Off';
+        } else {
+          // Turn on this one and turn off all others
+          values[elemName] = 'On';
+          clickedButton.closest('.switch-button-group').find('.switch-button').each(function() {
+            var otherElemName = $(this).data('element');
+            if (otherElemName !== elemName && $(this).hasClass('button-active')) {
+              values[otherElemName] = 'Off';
+            }
+          });
+        }
+      }
+
+      addMessage("info", "Setting switch " + propName + " (" + rule + ") with values: " + JSON.stringify(values), "System");
+
+      $.ajax({
+        type: 'POST',
+        url: '/api/devices/' + encodeURIComponent(deviceName) + '/properties/' + encodeURIComponent(propName) + '/set',
+        data: JSON.stringify({ elements: values }),
+        contentType: 'application/json',
+        success: function(response) {
+          addMessage("success", "Switch " + propName + " set successfully", deviceName);
+        },
+        error: function(xhr, status, error) {
+          var errorMsg = xhr.responseJSON?.detail || error;
+          addMessage("error", "Failed to set switch " + propName + ": " + errorMsg, "System");
+          // Remove blue state on error
+          clickedButton.removeClass('button-clicked');
+        }
+      });
     }
 
   </script>

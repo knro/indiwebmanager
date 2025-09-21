@@ -70,6 +70,8 @@
   align-items: center;
   margin-bottom: 8px;
   padding: 5px 0;
+  flex-wrap: wrap;
+  gap: 5px;
 }
 
 .element-label {
@@ -77,17 +79,71 @@
   margin-right: 10px;
   font-weight: normal;
   color: #666;
+  flex-shrink: 0;
 }
 
 .element-input {
   margin-right: 10px;
-  max-width: 200px;
+  max-width: 150px;
+  margin-left: 5px;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .property-buttons {
   margin-top: 12px;
   padding-top: 8px;
   border-top: 1px solid #eee;
+}
+
+/* Property control buttons */
+.copy-value-btn {
+  margin-left: 5px;
+  margin-right: 5px;
+  padding: 3px 8px;
+  font-size: 11px;
+  line-height: 1.2;
+  min-width: 32px;
+  vertical-align: middle;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: linear-gradient(to bottom, #fff 0%, #f0f0f0 100%);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.copy-value-btn:hover {
+  background: linear-gradient(to bottom, #f8f8f8 0%, #e8e8e8 100%);
+  border-color: #aaa;
+}
+
+.copy-value-btn:active {
+  background: linear-gradient(to bottom, #e8e8e8 0%, #f0f0f0 100%);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.property-set-control {
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.set-property-btn {
+  min-width: 60px;
+}
+
+/* Styling for current value display in writable properties */
+.element-current-value {
+  margin-right: 5px;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+/* Better layout for value + controls */
+.element-value-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
 }
 
 .switch-group {
@@ -228,8 +284,45 @@
 }
 
 .property-readonly {
-  background-color: #f9f9f9;
-  border-left: 4px solid #ccc;
+  background-color: #f5f5f5;
+  border-left: 4px solid #bbb;
+}
+
+/* Make text elements in read-only properties more grayish */
+.property-readonly .property-label {
+  color: #777;
+}
+
+.property-readonly .element-label {
+  color: #888;
+}
+
+.property-readonly .element-value {
+  background-color: #e9e9e9;
+  color: #666;
+  border-color: #d5d5d5;
+}
+
+/* Make light indicators in read-only properties more grayish */
+.property-readonly .light-indicator {
+  opacity: 0.7;
+}
+
+/* Make switch elements in read-only properties more grayish */
+.property-readonly .switch-element {
+  opacity: 0.8;
+}
+
+.property-readonly .switch-on {
+  background-color: #e0e7e0;
+  border-color: #c0c8c0;
+  color: #556755;
+}
+
+.property-readonly .switch-off {
+  background-color: #ebe5e5;
+  border-color: #d0c5c5;
+  color: #6b5555;
 }
 
 .property-writeonly {
@@ -261,6 +354,18 @@
   padding: 3px 8px;
   border-radius: 4px;
   display: inline-block;
+}
+
+/* Box styling for switch fallback strong elements */
+.switch-element strong {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  background-color: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #e9ecef;
+  display: inline-block;
+  min-width: 60px;
+  font-weight: normal;
 }
 
 .switch-on {
@@ -398,6 +503,10 @@
   border-radius: 3px;
   min-width: 30px;
   text-align: center;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  display: inline-block;
 }
 
 .switch-status.status-on {
@@ -474,6 +583,15 @@
   transform: translateY(0px);
 }
 
+/* Blue clicked state for switch buttons */
+.switch-button.button-clicked {
+  background-color: #007bff !important;
+  color: white !important;
+  border-color: #0056b3 !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+  transform: translateY(1px);
+}
+
 .switch-button:first-child {
   border-top-left-radius: 3px;
   border-bottom-left-radius: 3px;
@@ -517,6 +635,41 @@
 
 .property-readonly .switch-button:hover {
   background-color: inherit !important;
+}
+
+/* Dark gray styling for read-only button switches */
+.property-readonly .switch-button.button-active {
+  background-color: #6c757d !important;
+  color: #f8f9fa !important;
+  border-color: #495057 !important;
+}
+
+.property-readonly .switch-button.button-inactive {
+  background-color: #e9ecef !important;
+  color: #6c757d !important;
+  border-color: #adb5bd !important;
+}
+
+/* More grayish styling for read-only checkbox switches */
+.property-readonly .switch-checkbox.checkbox-checked {
+  background-color: #999 !important;
+  border-color: #777 !important;
+}
+
+.property-readonly .switch-checkbox.checkbox-unchecked {
+  border-color: #ccc !important;
+}
+
+.property-readonly .switch-status.status-on {
+  background-color: #e0e7e0 !important;
+  color: #556755 !important;
+  border-color: #c0c8c0 !important;
+}
+
+.property-readonly .switch-status.status-off {
+  background-color: #ebe5e5 !important;
+  color: #6b5555 !important;
+  border-color: #d0c5c5 !important;
 }
 
 /* Responsive adjustments */
@@ -609,6 +762,63 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Legend section styling */
+.legend-section {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+}
+
+.legend-section h5 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #495057;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.legend-horizontal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.legend-item span {
+  margin-right: 6px;
+}
+
+.legend-border {
+  width: 20px;
+  height: 12px;
+  border-radius: 2px;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.property-readonly-border {
+  background-color: #f5f5f5;
+  border-left: 4px solid #bbb;
+}
+
+.property-readwrite-border {
+  background-color: #ffffff;
+  border-left: 4px solid #5cb85c;
+}
+
+.property-writeonly-border {
+  background-color: #ffffff;
+  border-left: 4px solid #428bca;
 }
 
 /* Property type indicators */

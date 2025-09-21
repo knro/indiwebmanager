@@ -648,10 +648,10 @@ async def get_device_structure(device_name: str):
     return JSONResponse(content=structure)
 
 
-@app.get('/api/devices/{device_name}/dirty', tags=["Devices"])
-async def get_dirty_properties(device_name: str):
+@app.get('/api/devices/{device_name}/poll', tags=["Devices"])
+async def poll_device_properties(device_name: str):
     """
-    Gets list of properties that have changed since last check.
+    Polls for properties that have changed since last check.
 
     Args:
         device_name (str): The name of the device.
@@ -744,6 +744,51 @@ async def get_device_property(device_name: str, property_name: str):
         raise HTTPException(status_code=404, detail="Property not found")
 
     return JSONResponse(content=property_data)
+
+
+@app.post('/api/devices/{device_name}/properties/{property_name}/set', tags=["Devices"])
+async def set_device_property(device_name: str, property_name: str, request: Request):
+    """
+    Sets values for a specific property on a device.
+
+    Args:
+        device_name (str): The name of the device.
+        property_name (str): The name of the property.
+        request: The request containing the property element values.
+
+    Returns:
+        dict: Success response or error details.
+    """
+    client = get_indi_client()
+    if not client.is_connected():
+        raise HTTPException(status_code=503, detail="INDI client not connected")
+
+    try:
+        data = await request.json()
+        elements = data.get('elements', {})
+
+        if not elements:
+            raise HTTPException(status_code=400, detail="No element values provided")
+
+        # Log the received values for now
+        logging.warning(f"Setting property {device_name}.{property_name} with values: {elements}")
+
+        # TODO: Implement actual INDI property setting here
+        # For now, just log and return success
+
+        return JSONResponse(content={
+            "success": True,
+            "message": f"Property {property_name} set request received",
+            "device": device_name,
+            "property": property_name,
+            "elements": elements
+        })
+
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON in request body")
+    except Exception as e:
+        logging.error(f"Error setting property {device_name}.{property_name}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 
