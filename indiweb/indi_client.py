@@ -1,56 +1,50 @@
 #!/usr/bin/env python
 
-import socket
-import threading
-import xml.etree.ElementTree as ET
 import time
 import logging
-import re
+import threading
 from collections import defaultdict
 
+try:
+    import PyIndi
+except ImportError:
+    print("PyIndi module not found. Please install pyindi-client.")
+    raise
 
-class INDIClient:
+
+class INDIClient(PyIndi.BaseClient):
     """
     A simple INDI client for connecting to an INDI server and managing device properties.
     Based on the INDI protocol: https://indilib.org/develop/developer-manual/101-standard-properties.html
     """
 
     def __init__(self, host='localhost', port=7624):
+        super(INDIClient, self).__init__()
         self.host = host
         self.port = port
-        self.socket = None
         self.connected = False
         self.devices = {}
         self.properties = defaultdict(dict)
         self.dirty_properties = defaultdict(set)  # Track changed properties per device
+        self.property_timestamps = defaultdict(dict)  # Track when properties were last updated
         self.auto_connect_devices = True
         self.listeners = []
-        self.receive_thread = None
-        self.running = False
+        # Removed pending_operations - all operations are now asynchronous
+        self.connection_lock = threading.Lock()
 
     def connect(self):
         """Connect to the INDI server"""
         try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.settimeout(10)  # 10 second timeout for connection
-            self.socket.connect((self.host, self.port))
-            self.socket.settimeout(None)  # Remove timeout after connection
-            self.connected = True
-            self.running = True
-
-            # Start receive thread
-            self.receive_thread = threading.Thread(target=self._receive_loop)
-            self.receive_thread.daemon = True
-            self.receive_thread.start()
-
-            # Request device list
-            self.send_message('<getProperties version="1.7"/>')
-            logging.info(f"Connected to INDI server at {self.host}:{self.port}")
-
-            # Wait a bit for initial properties to load
-            time.sleep(1)
-            return True
-
+            with self.connection_lock:
+                self.setServer(self.host, self.port)
+                success = self.connectServer()
+                if success:
+                    # Don't set connected=True here, wait for serverConnected() callback
+                    logging.info(f"Attempting to connect to INDI server at {self.host}:{self.port}")
+                    # Wait a bit for connection to establish and initial properties to load
+                    time.sleep(2)
+                    return self.connected  # Return actual connection status from callback
+                return False
         except Exception as e:
             logging.error(f"Failed to connect to INDI server: {e}")
             self.connected = False
@@ -58,221 +52,252 @@ class INDIClient:
 
     def disconnect(self):
         """Disconnect from the INDI server"""
-        self.running = False
-        if self.socket:
-            try:
-                self.socket.close()
-            except:
-                pass
-        self.connected = False
-        self.socket = None
-        logging.info("Disconnected from INDI server")
+        with self.connection_lock:
+            if self.connected:
+                self.disconnectServer()
+                self.connected = False
+                logging.info("Disconnected from INDI server")
 
     def send_message(self, message):
-        """Send a message to the INDI server"""
-        if not self.connected or not self.socket:
-            return False
+        """Send a message to the INDI server (deprecated - use PyIndi methods)"""
+        # This method is kept for compatibility but should not be used
+        # with PyIndi client. Use sendNewProperty and other PyIndi methods instead.
+        logging.warning("send_message is deprecated with PyIndi client")
+        return False
 
-        try:
-            self.socket.send(message.encode() + b'\n')
-            return True
-        except Exception as e:
-            logging.error(f"Failed to send message: {e}")
-            return False
+    # PyIndi callback methods
+    def newDevice(self, device):
+        """Called when a new device is created"""
+        device_name = device.getDeviceName()
+        if device_name not in self.devices:
+            self.devices[device_name] = {}
+        logging.debug(f"New device: {device_name}")
+        self._notify_listeners('device_added', device_name, None)
 
-    def _receive_loop(self):
-        """Main receive loop for processing INDI messages"""
-        buffer = ""
+    def removeDevice(self, device):
+        """Called when a device is removed"""
+        device_name = device.getDeviceName()
+        if device_name in self.devices:
+            del self.devices[device_name]
+        if device_name in self.properties:
+            del self.properties[device_name]
+        logging.debug(f"Removed device: {device_name}")
+        self._notify_listeners('device_deleted', device_name, None)
 
-        while self.running and self.connected:
-            try:
-                data = self.socket.recv(4096).decode()
-                if not data:
-                    break
+    def newProperty(self, prop):
+        """Called when a new property is created"""
+        device_name = prop.getDeviceName()
+        prop_name = prop.getName()
 
-                buffer += data
+        property_data = self._convert_property_to_dict(prop)
 
-                # Process complete XML messages
-                while True:
-                    # Find the start and end of an XML message
-                    start = buffer.find('<')
-                    if start == -1:
-                        break
+        if device_name not in self.devices:
+            self.devices[device_name] = {}
+        if device_name not in self.properties:
+            self.properties[device_name] = {}
 
-                    # Find the matching closing tag
-                    tag_end = buffer.find('>', start)
-                    if tag_end == -1:
-                        break
+        self.properties[device_name][prop_name] = property_data
+        self.devices[device_name][prop_name] = property_data
 
-                    tag_name = buffer[start+1:tag_end].split()[0]
-                    if tag_name.endswith('/'):
-                        # Self-closing tag
-                        message = buffer[start:tag_end+1]
-                        buffer = buffer[tag_end+1:]
-                        self._process_message(message)
-                    else:
-                        # Find closing tag
-                        closing_tag = f"</{tag_name}>"
-                        end = buffer.find(closing_tag, tag_end)
-                        if end == -1:
-                            break
+        # Mark property as dirty (new property)
+        self.dirty_properties[device_name].add(prop_name)
 
-                        message = buffer[start:end + len(closing_tag)]
-                        buffer = buffer[end + len(closing_tag):]
-                        self._process_message(message)
+        # Auto-connect device if it has a CONNECTION property
+        if self.auto_connect_devices and prop_name == 'CONNECTION':
+            self._auto_connect_device(device_name)
 
-            except Exception as e:
-                logging.error(f"Error in receive loop: {e}")
-                break
+        # Notify listeners
+        self._notify_listeners('property_defined', device_name, property_data)
 
+    def updateProperty(self, prop):
+        """Called when a property is updated"""
+        device_name = prop.getDeviceName()
+        prop_name = prop.getName()
+
+        property_data = self._convert_property_to_dict(prop)
+
+        if device_name in self.properties and prop_name in self.properties[device_name]:
+            old_prop = self.properties[device_name][prop_name]
+            old_state = old_prop.get('state', 'idle')
+
+            # Update the property data
+            self.properties[device_name][prop_name] = property_data
+            self.devices[device_name][prop_name] = property_data
+
+            # No need for completion tracking since all operations are now asynchronous
+
+            # Mark property as dirty (updated property)
+            self.dirty_properties[device_name].add(prop_name)
+            # Update timestamp for this property
+            self.property_timestamps[device_name][prop_name] = time.time()
+
+            # Notify listeners
+            self._notify_listeners('property_updated', device_name, property_data)
+
+    def removeProperty(self, prop):
+        """Called when a property is removed"""
+        device_name = prop.getDeviceName()
+        prop_name = prop.getName()
+
+        if device_name in self.properties and prop_name in self.properties[device_name]:
+            del self.properties[device_name][prop_name]
+            if device_name in self.devices and prop_name in self.devices[device_name]:
+                del self.devices[device_name][prop_name]
+            self._notify_listeners('property_deleted', device_name, {'name': prop_name})
+
+    def newMessage(self, device, message_id):
+        """Called when a new message arrives"""
+        device_name = device.getDeviceName() if device else "Server"
+        message_text = device.messageQueue(message_id) if device else ""
+
+        self._notify_listeners('message', device_name, {
+            'message': message_text,
+            'timestamp': str(time.time())
+        })
+
+    def serverConnected(self):
+        """Called when server connects"""
+        self.connected = True
+        logging.info(f"Server connected ({self.getHost()}:{self.getPort()})")
+
+    def serverDisconnected(self, exit_code):
+        """Called when server disconnects"""
         self.connected = False
+        logging.info(f"Server disconnected (exit code = {exit_code})")
 
-    def _process_message(self, message):
-        """Process an INDI XML message"""
-        try:
-            root = ET.fromstring(message)
+    def _convert_property_to_dict(self, prop):
+        """Convert a PyIndi property to dictionary format"""
+        device_name = prop.getDeviceName()
+        prop_name = prop.getName()
+        prop_label = prop.getLabel()
+        prop_group = prop.getGroupName()
+        prop_state = prop.getStateAsString().lower()
+        # Convert permission number to string
+        perm_num = prop.getPermission()
+        if perm_num == PyIndi.IP_RO:
+            prop_perm = 'ro'
+        elif perm_num == PyIndi.IP_WO:
+            prop_perm = 'wo'
+        elif perm_num == PyIndi.IP_RW:
+            prop_perm = 'rw'
+        else:
+            prop_perm = 'rw'  # default
+        prop_type_str = prop.getTypeAsString().lower()
 
-            if root.tag == 'defTextVector':
-                self._process_def_property(root, 'text')
-            elif root.tag == 'defNumberVector':
-                self._process_def_property(root, 'number')
-            elif root.tag == 'defSwitchVector':
-                self._process_def_property(root, 'switch')
-            elif root.tag == 'defLightVector':
-                self._process_def_property(root, 'light')
-            elif root.tag == 'defBLOBVector':
-                self._process_def_property(root, 'blob')
-            elif root.tag in ['setTextVector', 'setNumberVector', 'setSwitchVector', 'setLightVector', 'setBLOBVector']:
-                self._process_set_property(root)
-            elif root.tag == 'delProperty':
-                self._process_del_property(root)
-            elif root.tag == 'message':
-                self._process_message_tag(root)
-
-        except ET.ParseError as e:
-            logging.warning(f"Failed to parse XML message: {e}")
-        except Exception as e:
-            logging.error(f"Error processing message: {e}")
-
-    def _process_def_property(self, root, prop_type):
-        """Process a property definition message"""
-        device = root.get('device')
-        name = root.get('name')
-        label = root.get('label', name)
-        group = root.get('group', 'Main')
-        state = root.get('state', 'Idle')
-        perm = root.get('perm', 'rw')
-        rule = root.get('rule') if prop_type == 'switch' else None
-
-        if device not in self.devices:
-            self.devices[device] = {}
+        # Map PyIndi property types to our format
+        # PyIndi returns "INDI_Text", "INDI_Number", etc.
+        type_mapping = {
+            'indi_text': 'text',
+            'indi_number': 'number',
+            'indi_switch': 'switch',
+            'indi_light': 'light',
+            'indi_blob': 'blob'
+        }
+        prop_type = type_mapping.get(prop_type_str, prop_type_str)
 
         elements = {}
-        for child in root:
-            if child.tag.startswith('def'):
-                elem_name = child.get('name')
-                elem_label = child.get('label', elem_name)
-                elem_value = (child.text or '').strip()
+        switch_rule = None  # Initialize for switch properties
 
-                element = {
-                    'name': elem_name,
-                    'label': elem_label,
-                    'value': elem_value
+        if prop.getType() == PyIndi.INDI_TEXT:
+            text_prop = PyIndi.PropertyText(prop)
+            for widget in text_prop:
+                elements[widget.name] = {
+                    'name': widget.name,
+                    'label': widget.label,
+                    'value': widget.text
                 }
 
-                # Add type-specific attributes
-                if prop_type == 'number':
-                    element.update({
-                        'min': child.get('min'),
-                        'max': child.get('max'),
-                        'step': child.get('step'),
-                        'format': child.get('format')
-                    })
+        elif prop.getType() == PyIndi.INDI_NUMBER:
+            number_prop = PyIndi.PropertyNumber(prop)
+            for widget in number_prop:
+                element = {
+                    'name': widget.name,
+                    'label': widget.label,
+                    'value': str(widget.value),
+                    'min': str(widget.min) if widget.min is not None else None,
+                    'max': str(widget.max) if widget.max is not None else None,
+                    'step': str(widget.step) if widget.step is not None else None,
+                    'format': widget.format if widget.format else None
+                }
+                elements[widget.name] = element
 
-                elements[elem_name] = element
+        elif prop.getType() == PyIndi.INDI_SWITCH:
+            switch_prop = PyIndi.PropertySwitch(prop)
+            # Get the rule from the switch property - this will be used later in property_data
+            switch_rule = switch_prop.getRule() if hasattr(switch_prop, 'getRule') else None
+            if switch_rule is not None:
+                # Convert PyIndi rule constants to strings
+                if switch_rule == PyIndi.ISR_1OFMANY:
+                    switch_rule = 'OneOfMany'
+                elif switch_rule == PyIndi.ISR_ATMOST1:
+                    switch_rule = 'AtMostOne'
+                elif switch_rule == PyIndi.ISR_NOFMANY:
+                    switch_rule = 'AnyOfMany'
+                else:
+                    switch_rule = 'OneOfMany'  # default
+
+            for widget in switch_prop:
+                elements[widget.name] = {
+                    'name': widget.name,
+                    'label': widget.label,
+                    'value': 'On' if widget.s == PyIndi.ISS_ON else 'Off'
+                }
+
+        elif prop.getType() == PyIndi.INDI_LIGHT:
+            light_prop = PyIndi.PropertyLight(prop)
+            for widget in light_prop:
+                # Convert light state to string
+                state_str = 'Idle'
+                if widget.s == PyIndi.IPS_IDLE:
+                    state_str = 'Idle'
+                elif widget.s == PyIndi.IPS_OK:
+                    state_str = 'Ok'
+                elif widget.s == PyIndi.IPS_BUSY:
+                    state_str = 'Busy'
+                elif widget.s == PyIndi.IPS_ALERT:
+                    state_str = 'Alert'
+
+                elements[widget.name] = {
+                    'name': widget.name,
+                    'label': widget.label,
+                    'value': state_str
+                }
+
+        elif prop.getType() == PyIndi.INDI_BLOB:
+            blob_prop = PyIndi.PropertyBlob(prop)
+            for widget in blob_prop:
+                size = getattr(widget, 'size', 0) if hasattr(widget, 'size') else 0
+                elements[widget.name] = {
+                    'name': widget.name,
+                    'label': widget.label,
+                    'value': f'<blob {size} bytes>'
+                }
+
+        # Set the rule based on property type
+        rule_value = None
+        if prop.getType() == PyIndi.INDI_SWITCH:
+            rule_value = switch_rule
 
         property_data = {
-            'name': name,
-            'label': label,
-            'group': group,
+            'name': prop_name,
+            'label': prop_label,
+            'group': prop_group,
             'type': prop_type,
-            'state': state.lower(),
-            'perm': perm,
-            'rule': rule,
+            'state': prop_state,
+            'perm': prop_perm.lower(),
+            'rule': rule_value,
             'elements': elements,
-            'device': device
+            'device': device_name
         }
 
         # Apply formatting to number properties
         property_data = self._apply_formatting_to_property(property_data)
 
-        self.properties[device][name] = property_data
-        self.devices[device][name] = property_data
+        return property_data
 
-        # Mark property as dirty (new property)
-        self.dirty_properties[device].add(name)
 
-        # Auto-connect device if it has a CONNECTION property
-        if self.auto_connect_devices and name == 'CONNECTION':
-            self._auto_connect_device(device)
 
-        # Notify listeners
-        self._notify_listeners('property_defined', device, property_data)
 
-    def _process_set_property(self, root):
-        """Process a property update message"""
-        device = root.get('device')
-        name = root.get('name')
-        state = root.get('state', 'Idle')
-
-        if device in self.properties and name in self.properties[device]:
-            prop = self.properties[device][name]
-            prop['state'] = state.lower()
-
-            # Update element values
-            for child in root:
-                if child.tag.startswith('one'):
-                    elem_name = child.get('name')
-                    if elem_name in prop['elements']:
-                        prop['elements'][elem_name]['value'] = (child.text or '').strip()
-
-            # Apply formatting to updated property
-            prop = self._apply_formatting_to_property(prop)
-
-            # Mark property as dirty (updated property)
-            self.dirty_properties[device].add(name)
-
-            # Notify listeners
-            self._notify_listeners('property_updated', device, prop)
-
-    def _process_del_property(self, root):
-        """Process a property deletion message"""
-        device = root.get('device')
-        name = root.get('name')
-
-        if device in self.properties:
-            if name:
-                # Delete specific property
-                if name in self.properties[device]:
-                    del self.properties[device][name]
-                    self._notify_listeners('property_deleted', device, {'name': name})
-            else:
-                # Delete all properties for device
-                self.properties[device] = {}
-                if device in self.devices:
-                    del self.devices[device]
-                self._notify_listeners('device_deleted', device, None)
-
-    def _process_message_tag(self, root):
-        """Process a message tag"""
-        device = root.get('device')
-        message = root.text or ''
-        timestamp = root.get('timestamp', str(time.time()))
-
-        self._notify_listeners('message', device, {
-            'message': message,
-            'timestamp': timestamp
-        })
 
     def _notify_listeners(self, event_type, device, data):
         """Notify all registered listeners of an event"""
@@ -293,6 +318,9 @@ class INDIClient:
 
     def get_devices(self):
         """Get list of available devices"""
+        if self.connected:
+            pyindi_devices = self.getDevices()
+            return [device.getDeviceName() for device in pyindi_devices]
         return list(self.devices.keys())
 
     def get_device_properties(self, device_name):
@@ -308,19 +336,61 @@ class INDIClient:
         """Wait for a device to become available"""
         start_time = time.time()
         while time.time() - start_time < timeout:
-            if device_name in self.devices:
+            if self.connected:
+                device = self.getDevice(device_name)
+                if device:
+                    return True
+            elif device_name in self.devices:
                 return True
             time.sleep(0.1)
         return False
 
     def set_property(self, device_name, property_name, elements):
-        """Set property values"""
+        """
+        Set property values and return detailed result information.
+
+        Args:
+            device_name (str): Name of the device
+            property_name (str): Name of the property
+            elements (dict): Dictionary of element names and values
+
+        Returns:
+            dict: Result with success status, message, and details
+        """
         prop = self.get_property(device_name, property_name)
         if not prop:
-            return False
+            return {
+                'success': False,
+                'error': f'Property {device_name}.{property_name} not found',
+                'error_type': 'property_not_found'
+            }
+
+        # Check if property is writable
+        perm = prop.get('perm', 'rw')
+        if perm not in ['rw', 'wo']:
+            return {
+                'success': False,
+                'error': f'Property {device_name}.{property_name} is read-only',
+                'error_type': 'permission_denied'
+            }
+
+        # Validate elements exist
+        for elem_name in elements:
+            if elem_name not in prop.get('elements', {}):
+                return {
+                    'success': False,
+                    'error': f'Element {elem_name} not found in property {device_name}.{property_name}',
+                    'error_type': 'element_not_found'
+                }
 
         prop_type = prop['type']
-        message = ""
+        original_prop_type = prop_type
+
+        # Normalize property type (handle both old and new formats)
+        if prop_type.startswith('indi_'):
+            prop_type = prop_type[5:]  # Remove 'indi_' prefix
+
+        logging.info(f"Setting property {device_name}.{property_name}: original type '{original_prop_type}' -> normalized type '{prop_type}'")
 
         if prop_type == 'text':
             message = f'<newTextVector device="{device_name}" name="{property_name}">'
@@ -331,31 +401,122 @@ class INDIClient:
         elif prop_type == 'number':
             message = f'<newNumberVector device="{device_name}" name="{property_name}">'
             for elem_name, value in elements.items():
-                message += f'<oneNumber name="{elem_name}">{value}</oneNumber>'
+                try:
+                    # Validate number format
+                    float(value)
+                    message += f'<oneNumber name="{elem_name}">{value}</oneNumber>'
+                except ValueError:
+                    return {
+                        'success': False,
+                        'error': f'Invalid number format for element {elem_name}: {value}',
+                        'error_type': 'invalid_value'
+                    }
             message += '</newNumberVector>'
 
         elif prop_type == 'switch':
             message = f'<newSwitchVector device="{device_name}" name="{property_name}">'
             for elem_name, value in elements.items():
+                # Validate switch values
+                if value not in ['On', 'Off', 'ON', 'OFF']:
+                    return {
+                        'success': False,
+                        'error': f'Invalid switch value for element {elem_name}: {value}. Must be On/Off',
+                        'error_type': 'invalid_value'
+                    }
                 message += f'<oneSwitch name="{elem_name}">{value}</oneSwitch>'
             message += '</newSwitchVector>'
 
-        return self.send_message(message)
+        else:
+            return {
+                'success': False,
+                'error': f'Unsupported property type: {original_prop_type} (normalized: {prop_type})',
+                'error_type': 'unsupported_type'
+            }
+
+        # Send using PyIndi methods
+        device = self.getDevice(device_name)
+        if not device:
+            return {
+                'success': False,
+                'error': f'Device {device_name} not found',
+                'error_type': 'device_not_found'
+            }
+
+        property_obj = device.getProperty(property_name)
+        if not property_obj:
+            return {
+                'success': False,
+                'error': f'Property {device_name}.{property_name} not found',
+                'error_type': 'property_not_found'
+            }
+
+        try:
+            if prop_type == 'text':
+                text_prop = PyIndi.PropertyText(property_obj)
+                for elem_name, value in elements.items():
+                    widget = text_prop.findWidgetByName(elem_name)
+                    if widget:
+                        widget.setText(str(value))
+                self.sendNewProperty(text_prop)
+
+            elif prop_type == 'number':
+                number_prop = PyIndi.PropertyNumber(property_obj)
+                for elem_name, value in elements.items():
+                    widget = number_prop.findWidgetByName(elem_name)
+                    if widget:
+                        widget.setValue(float(value))
+                self.sendNewProperty(number_prop)
+
+            elif prop_type == 'switch':
+                switch_prop = PyIndi.PropertySwitch(property_obj)
+                for elem_name, value in elements.items():
+                    widget = switch_prop.findWidgetByName(elem_name)
+                    if widget:
+                        if value in ['On', 'ON']:
+                            widget.setState(PyIndi.ISS_ON)
+                        else:
+                            widget.setState(PyIndi.ISS_OFF)
+                self.sendNewProperty(switch_prop)
+
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Failed to send property update: {str(e)}',
+                'error_type': 'communication_error'
+            }
+
+        # All INDI operations are asynchronous - return success immediately after sending
+        # The actual property updates will be received via PyIndi callbacks and polling
+        return {
+            'success': True,
+            'message': f'Property {property_name} command sent successfully',
+            'property': property_name,
+            'device': device_name,
+            'elements': elements
+        }
 
     def is_connected(self):
         """Check if connected to INDI server"""
         return self.connected
+
+    # Removed _cleanup_old_operations - no longer needed with asynchronous operations
 
     def _auto_connect_device(self, device_name):
         """Automatically connect a device when it becomes available"""
         def connect_after_delay():
             time.sleep(2)  # Wait for device to be fully initialized
             logging.info(f"Auto-connecting device: {device_name}")
-            connection_prop = self.get_property(device_name, 'CONNECTION')
-            if connection_prop and connection_prop['elements'].get('CONNECT'):
-                # Only connect if not already connected
-                if connection_prop['elements']['CONNECT']['value'] != 'On':
-                    self.set_property(device_name, 'CONNECTION', {'CONNECT': 'On', 'DISCONNECT': 'Off'})
+            device = self.getDevice(device_name)
+            if device and not device.isConnected():
+                connection_prop = device.getProperty('CONNECTION')
+                if connection_prop:
+                    switch_prop = PyIndi.PropertySwitch(connection_prop)
+                    connect_widget = switch_prop.findWidgetByName('CONNECT')
+                    disconnect_widget = switch_prop.findWidgetByName('DISCONNECT')
+                    if connect_widget and disconnect_widget:
+                        connect_widget.setState(PyIndi.ISS_ON)
+                        disconnect_widget.setState(PyIndi.ISS_OFF)
+                        self.sendNewProperty(switch_prop)
 
         # Run in separate thread to avoid blocking
         thread = threading.Thread(target=connect_after_delay)
@@ -379,11 +540,30 @@ class INDIClient:
 
         return structure
 
-    def get_dirty_properties(self, device_name):
+    def get_dirty_properties(self, device_name, since_timestamp=None):
         """Get list of properties that have changed since last check"""
-        dirty_props = list(self.dirty_properties[device_name])
-        # Clear dirty flags after returning them
-        self.dirty_properties[device_name].clear()
+        if since_timestamp is None:
+            since_timestamp = time.time() - 10  # Default: get changes from last 10 seconds
+
+        dirty_props = []
+        current_time = time.time()
+
+        for prop_name, update_time in self.property_timestamps.get(device_name, {}).items():
+            if update_time > since_timestamp:
+                dirty_props.append(prop_name)
+
+        # Clean up old timestamps (older than 60 seconds)
+        cutoff_time = current_time - 60
+        if device_name in self.property_timestamps:
+            props_to_remove = [
+                prop_name for prop_name, update_time
+                in self.property_timestamps[device_name].items()
+                if update_time < cutoff_time
+            ]
+            for prop_name in props_to_remove:
+                del self.property_timestamps[device_name][prop_name]
+                self.dirty_properties[device_name].discard(prop_name)
+
         return dirty_props
 
     def get_changed_properties(self, device_name, property_names):

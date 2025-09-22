@@ -649,12 +649,13 @@ async def get_device_structure(device_name: str):
 
 
 @app.get('/api/devices/{device_name}/poll', tags=["Devices"])
-async def poll_device_properties(device_name: str):
+async def poll_device_properties(device_name: str, since: float = None):
     """
     Polls for properties that have changed since last check.
 
     Args:
         device_name (str): The name of the device.
+        since (float): Timestamp since when to check for changes (optional).
 
     Returns:
         list: A list of property names that have changed.
@@ -663,7 +664,7 @@ async def poll_device_properties(device_name: str):
     if not client.is_connected():
         raise HTTPException(status_code=503, detail="INDI client not connected")
 
-    dirty_props = client.get_dirty_properties(device_name)
+    dirty_props = client.get_dirty_properties(device_name, since)
     return JSONResponse(content=dirty_props)
 
 
@@ -770,24 +771,50 @@ async def set_device_property(device_name: str, property_name: str, request: Req
         if not elements:
             raise HTTPException(status_code=400, detail="No element values provided")
 
-        # Log the received values for now
+        # Log the received values
         logging.warning(f"Setting property {device_name}.{property_name} with values: {elements}")
 
-        # TODO: Implement actual INDI property setting here
-        # For now, just log and return success
+        # Set the property using the INDI client
+        result = client.set_property(device_name, property_name, elements)
 
-        return JSONResponse(content={
-            "success": True,
-            "message": f"Property {property_name} set request received",
-            "device": device_name,
-            "property": property_name,
-            "elements": elements
-        })
+        if result['success']:
+            # Success - property setting command was sent
+            logging.info(f"Property {device_name}.{property_name} set successfully")
+            return JSONResponse(content={
+                "success": True,
+                "message": result['message'],
+                "device": device_name,
+                "property": property_name,
+                "elements": elements
+            })
+        else:
+            # Error occurred during property setting
+            error_msg = result['error']
+            error_type = result.get('error_type', 'unknown_error')
+
+            logging.error(f"Failed to set property {device_name}.{property_name}: {error_msg}")
+
+            # Map error types to appropriate HTTP status codes
+            if error_type in ['property_not_found', 'element_not_found']:
+                status_code = 404
+            elif error_type == 'permission_denied':
+                status_code = 403
+            elif error_type in ['invalid_value', 'unsupported_type']:
+                status_code = 400
+            elif error_type == 'communication_error':
+                status_code = 503
+            else:
+                status_code = 500
+
+            raise HTTPException(status_code=status_code, detail=error_msg)
 
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON in request body")
+    except HTTPException:
+        # Re-raise HTTP exceptions (these are our expected errors)
+        raise
     except Exception as e:
-        logging.error(f"Error setting property {device_name}.{property_name}: {str(e)}")
+        logging.error(f"Unexpected error setting property {device_name}.{property_name}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 

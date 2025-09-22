@@ -108,6 +108,7 @@
   border: 1px solid #ccc;
   border-radius: 3px;
   background: linear-gradient(to bottom, #fff 0%, #f0f0f0 100%);
+  color: #333 !important;
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -115,11 +116,13 @@
 .copy-value-btn:hover {
   background: linear-gradient(to bottom, #f8f8f8 0%, #e8e8e8 100%);
   border-color: #aaa;
+  color: #333 !important;
 }
 
 .copy-value-btn:active {
   background: linear-gradient(to bottom, #e8e8e8 0%, #f0f0f0 100%);
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  color: #333 !important;
 }
 
 .property-set-control {
@@ -453,6 +456,29 @@
   background-color: #f8f9fa;
 }
 
+/* Horizontal checkbox style switches (AnyOfMany) */
+.switch-checkbox-group-horizontal {
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.switch-checkbox-item-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.switch-checkbox-item-horizontal:hover {
+  background-color: #f8f9fa;
+}
+
 .switch-checkbox {
   width: 16px;
   height: 16px;
@@ -762,6 +788,63 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Disconnected state styling */
+body.disconnected .set-property-btn,
+body.disconnected .copy-value-btn,
+body.disconnected .switch-button,
+body.disconnected .switch-checkbox,
+body.disconnected .element-input {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+body.disconnected .property-item {
+  background-color: #f5f5f5 !important;
+  border-color: #ddd !important;
+}
+
+body.disconnected .property-readwrite,
+body.disconnected .property-writeonly {
+  border-left-color: #999 !important;
+}
+
+body.disconnected .switch-button.button-active {
+  background-color: #999 !important;
+  border-color: #777 !important;
+  color: #ddd !important;
+}
+
+body.disconnected .switch-button.button-inactive {
+  background-color: #f0f0f0 !important;
+  border-color: #ccc !important;
+  color: #999 !important;
+}
+
+body.disconnected .switch-checkbox.checkbox-checked {
+  background-color: #999 !important;
+  border-color: #777 !important;
+}
+
+body.disconnected .switch-checkbox.checkbox-unchecked {
+  border-color: #ccc !important;
+}
+
+body.disconnected::before {
+  content: "⚠ DISCONNECTED - Controls Disabled";
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: #d9534f;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  z-index: 1000;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
 /* Legend section styling */

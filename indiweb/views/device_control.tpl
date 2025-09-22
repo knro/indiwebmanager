@@ -109,14 +109,19 @@
     var deviceName = "{{device_name}}";
     var deviceStructure = {};
     var lastUpdateTime = Date.now();
+    var lastPollTime = Date.now() / 1000; // Track last poll timestamp in seconds
     var messageLog = [];
     var maxMessages = 100;
+    var isConnected = true; // Track connection state
+    var reconnectAttempts = 0;
+    var maxReconnectAttempts = 10;
+    var reconnectTimeout = null;
 
     $(document).ready(function() {
       loadDeviceStructure();
 
-      // Start polling for changes every 2 seconds
-      setInterval(checkForUpdates, 2000);
+      // Start polling for changes every 1 second
+      setInterval(checkForUpdates, 1000);
 
       // Initialize message log
       addMessage("info", "Device control panel loaded", "System");
@@ -135,23 +140,29 @@
         deviceStructure = data;
         buildPropertyDisplay();
 
-        $("#device_status").removeClass("label-info label-danger")
-                          .addClass("label-success")
-                          .text("Connected - Auto-updating");
+        setConnectionState(true);
         addMessage("success", "Device structure loaded successfully", "System");
       }).fail(function(xhr, status, error) {
         console.error('Failed to load device structure:', error);
         $("#property-tab-content").html('<div class="alert alert-danger">Failed to load device structure. Make sure the device is connected and the INDI server is running.<br>Error: ' + (xhr.responseJSON?.detail || error) + '</div>');
 
-        $("#device_status").removeClass("label-info label-success")
-                          .addClass("label-danger")
-                          .text("Error");
+        setConnectionState(false);
         addMessage("error", "Failed to load device structure: " + (xhr.responseJSON?.detail || error), "System");
       });
     }
 
     function checkForUpdates() {
-      $.getJSON("/api/devices/" + encodeURIComponent(deviceName) + "/poll", function(dirtyProps) {
+      var currentTime = Date.now() / 1000;
+      var pollUrl = "/api/devices/" + encodeURIComponent(deviceName) + "/poll?since=" + lastPollTime;
+
+      $.getJSON(pollUrl, function(dirtyProps) {
+        lastPollTime = currentTime; // Update poll timestamp
+
+        // Connection is working - ensure we're in connected state
+        if (!isConnected) {
+          setConnectionState(true);
+        }
+
         if (dirtyProps && dirtyProps.length > 0) {
           console.log('Dirty properties:', dirtyProps);
           fetchUpdatedProperties(dirtyProps);
@@ -160,15 +171,66 @@
         console.error('Failed to check for updates:', error);
         addMessage("warning", "Connection check failed: " + error, "System");
 
-        // If we get a 503 (service unavailable), try to reload the structure
-        if (xhr.status === 503) {
-          $("#device_status").removeClass("label-success")
-                            .addClass("label-warning")
-                            .text("Reconnecting...");
-          addMessage("warning", "Device connection lost, attempting to reconnect...", "System");
-          setTimeout(loadDeviceStructure, 5000);
-        }
+        // Set disconnected state
+        setConnectionState(false);
+
+        // The automatic reconnection will be handled by setConnectionState(false)
       });
+    }
+
+    function setConnectionState(connected) {
+      isConnected = connected;
+
+      if (connected) {
+        // Connection restored - reset reconnection state
+        reconnectAttempts = 0;
+        if (reconnectTimeout) {
+          clearTimeout(reconnectTimeout);
+          reconnectTimeout = null;
+        }
+
+        // Remove disconnected styling and re-enable controls
+        $('body').removeClass('disconnected');
+        $('.set-property-btn, .copy-value-btn, .switch-button, .switch-checkbox, .element-input').prop('disabled', false);
+
+        $("#device_status").removeClass("label-warning label-danger")
+                          .addClass("label-success")
+                          .text("Connected - Auto-updating");
+        addMessage("success", "Connection restored", "System");
+      } else {
+        // Add disconnected styling and disable all interactive controls
+        $('body').addClass('disconnected');
+        $('.set-property-btn, .copy-value-btn, .switch-button, .switch-checkbox, .element-input').prop('disabled', true);
+
+        $("#device_status").removeClass("label-success label-info")
+                          .addClass("label-danger")
+                          .text("Disconnected");
+        addMessage("error", "Connection lost - controls disabled", "System");
+
+        // Start automatic reconnection attempts
+        attemptReconnection();
+      }
+    }
+
+    function attemptReconnection() {
+      if (reconnectAttempts >= maxReconnectAttempts) {
+        $("#device_status").text("Disconnected - Max retries reached");
+        addMessage("error", "Maximum reconnection attempts reached. Please refresh the page.", "System");
+        return;
+      }
+
+      reconnectAttempts++;
+      var retryDelay = Math.min(5000 * reconnectAttempts, 30000); // Exponential backoff, max 30s
+
+      $("#device_status").removeClass("label-danger")
+                        .addClass("label-warning")
+                        .text("Reconnecting... (attempt " + reconnectAttempts + "/" + maxReconnectAttempts + ")");
+
+      addMessage("info", "Attempting reconnection #" + reconnectAttempts + " in " + (retryDelay/1000) + " seconds...", "System");
+
+      reconnectTimeout = setTimeout(function() {
+        loadDeviceStructure();
+      }, retryDelay);
     }
 
     function fetchUpdatedProperties(propertyNames) {
@@ -227,6 +289,8 @@
     }
 
     function updateProperties(updatedProps) {
+      var needsStructureReload = false;
+
       // Update the device structure with new property values
       for (var propName in updatedProps) {
         var updatedProp = updatedProps[propName];
@@ -234,6 +298,17 @@
 
         if (deviceStructure[groupName] && deviceStructure[groupName][propName]) {
           var oldProp = deviceStructure[groupName][propName];
+
+          // Check for CONNECTION property changes that might affect device structure
+          if (propName === 'CONNECTION') {
+            var oldConnectValue = oldProp.elements.CONNECT ? oldProp.elements.CONNECT.value : 'Off';
+            var newConnectValue = updatedProp.elements.CONNECT ? updatedProp.elements.CONNECT.value : 'Off';
+
+            if (oldConnectValue !== newConnectValue) {
+              addMessage("info", 'Device connection changed: ' + oldConnectValue + ' → ' + newConnectValue, deviceName);
+              needsStructureReload = true;
+            }
+          }
 
           // Log property changes for each element
           for (var elemName in updatedProp.elements) {
@@ -270,6 +345,15 @@
           updatePropertyUI(propName, updatedProp);
         }
       }
+
+      // If CONNECTION changed, reload the entire device structure after a short delay
+      // to allow new properties to be fully available
+      if (needsStructureReload) {
+        addMessage("info", "Device connection state changed, reloading device structure...", "System");
+        setTimeout(function() {
+          loadDeviceStructure();
+        }, 1500); // Wait 1.5 seconds for device to fully connect/disconnect
+      }
     }
 
     function updatePropertyUI(propName, prop) {
@@ -294,16 +378,10 @@
             $(buttonSelector).removeClass('button-active button-inactive button-clicked')
                            .addClass(isOn ? 'button-active' : 'button-inactive');
           } else if (rule === 'AnyOfMany') {
-            // Update checkbox style
+            // Update checkbox style (horizontal layout doesn't have status text)
             var checkboxSelector = '.switch-checkbox[data-property="' + propName + '"][data-element="' + elemName + '"]';
             $(checkboxSelector).removeClass('checkbox-checked checkbox-unchecked')
                               .addClass(isOn ? 'checkbox-checked' : 'checkbox-unchecked');
-
-            // Update status text
-            var statusSelector = '.switch-status[data-property="' + propName + '"][data-element="' + elemName + '"]';
-            $(statusSelector).removeClass('status-on status-off')
-                            .addClass(isOn ? 'status-on' : 'status-off')
-                            .text(element.value || 'Off');
           } else {
             // Fallback to original text update
             $(elemSelector).text(element.value || 'Off');
@@ -387,7 +465,7 @@
       for (var elemName in prop.elements) {
         var elem = prop.elements[elemName];
         html += '<div class="element-row">';
-        html += '<span class="element-label">' + (elem.label || elemName) + ':</span>';
+        html += '<span class="element-label" title="Element ID: ' + elemName + '">' + (elem.label || elemName) + ':</span>';
 
         if (isWritable) {
           // Writable property: current value + input controls
@@ -439,7 +517,7 @@
       for (var elemName in prop.elements) {
         var elem = prop.elements[elemName];
         html += '<div class="element-row">';
-        html += '<span class="element-label">' + (elem.label || elemName) + ':</span>';
+        html += '<span class="element-label" title="Element ID: ' + elemName + '">' + (elem.label || elemName) + ':</span>';
 
         if (isWritable) {
           // Writable property: current value + input controls
@@ -450,10 +528,6 @@
             html += '<span class="element-value element-current-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
             html += (elem.formatted_value || elem.value || '0');
             html += '</span>';
-
-            if (elem.format) {
-              html += '<span class="text-muted"> (' + elem.format + ')</span>';
-            }
             if (elem.min !== undefined && elem.max !== undefined) {
               html += '<small class="text-muted"> [' + elem.min + ' - ' + elem.max + ']</small>';
             }
@@ -461,10 +535,7 @@
             html += '<button type="button" class="btn btn-xs btn-default copy-value-btn" ';
             html += 'data-property="' + prop.name + '" data-element="' + elemName + '">↦</button>';
           } else {
-            // For write-only properties, show format and range info without current value
-            if (elem.format) {
-              html += '<span class="text-muted">(' + elem.format + ')</span>';
-            }
+            // For write-only properties, show range info without current value
             if (elem.min !== undefined && elem.max !== undefined) {
               html += '<small class="text-muted"> [' + elem.min + ' - ' + elem.max + ']</small>';
             }
@@ -487,9 +558,6 @@
           html += (elem.formatted_value || elem.value || '0');
           html += '</span>';
 
-          if (elem.format) {
-            html += '<span class="text-muted"> (' + elem.format + ')</span>';
-          }
           if (elem.min !== undefined && elem.max !== undefined) {
             html += '<small class="text-muted"> [' + elem.min + ' - ' + elem.max + ']</small>';
           }
@@ -545,21 +613,15 @@
         }
         html += '</div>';
       } else if (rule === 'AnyOfMany') {
-        // Checkbox style - multiple can be selected
-        html += '<div class="switch-group switch-checkbox-group">';
+        // Checkbox style - multiple can be selected, display horizontally
+        html += '<div class="switch-group switch-checkbox-group-horizontal">';
         for (var elemName in prop.elements) {
           var elem = prop.elements[elemName];
           var isOn = elem.value === 'On' || elem.value === 'ON';
-          html += '<div class="switch-checkbox-item">';
-          html += '<div class="switch-control">';
+          html += '<div class="switch-checkbox-item-horizontal">';
           html += '<span class="switch-checkbox ' + (isOn ? 'checkbox-checked' : 'checkbox-unchecked') + '" ';
           html += 'data-property="' + prop.name + '" data-element="' + elemName + '"></span>';
-          html += '<span class="element-label">' + (elem.label || elemName) + '</span>';
-          html += '</div>';
-          html += '<span class="switch-status ' + (isOn ? 'status-on' : 'status-off') + '" ';
-          html += 'data-property="' + prop.name + '" data-element="' + elemName + '">';
-          html += (elem.value || 'Off');
-          html += '</span>';
+          html += '<span class="element-label" title="Element ID: ' + elemName + '">' + (elem.label || elemName) + '</span>';
           html += '</div>';
         }
         html += '</div>';
@@ -570,7 +632,7 @@
           var elem = prop.elements[elemName];
           var isOn = elem.value === 'On' || elem.value === 'ON';
           html += '<span class="switch-element ' + (isOn ? 'switch-on' : 'switch-off') + '">';
-          html += '<span class="element-label">' + (elem.label || elemName) + ':</span> ';
+          html += '<span class="element-label" title="Element ID: ' + elemName + '">' + (elem.label || elemName) + ':</span> ';
           html += '<strong data-property="' + prop.name + '" data-element="' + elemName + '">';
           html += (elem.value || 'Off');
           html += '</strong>';
@@ -590,7 +652,7 @@
         var lightClass = 'state-' + (elem.value || 'idle').toLowerCase();
         html += '<div class="element-row">';
         html += '<span class="light-indicator ' + lightClass + '" data-property="' + prop.name + '" data-element="' + elemName + '"></span>';
-        html += '<span class="element-label">' + (elem.label || elemName) + ': </span>';
+        html += '<span class="element-label" title="Element ID: ' + elemName + '">' + (elem.label || elemName) + ': </span>';
         html += '<span class="element-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
         html += (elem.value || 'Unknown');
         html += '</span>';
@@ -746,6 +808,42 @@
 
         // Send switch update to backend
         setSwitchValue(propName, elemName, rule, $(this));
+      });
+
+      // Event delegation for switch checkbox clicks (AnyOfMany)
+      $(document).on('click', '.switch-checkbox', function() {
+        var propName = $(this).data('property');
+        var elemName = $(this).data('element');
+
+        // Only handle clicks for writable properties
+        var propertyItem = $(this).closest('.property-item');
+        if (propertyItem.hasClass('property-readonly')) {
+          return; // Ignore clicks on read-only switches
+        }
+
+        // Toggle the checkbox state and send update
+        var isCurrentlyChecked = $(this).hasClass('checkbox-checked');
+        var newValue = isCurrentlyChecked ? 'Off' : 'On';
+
+        // For AnyOfMany, just toggle this specific element
+        var values = {};
+        values[elemName] = newValue;
+
+        addMessage("info", "Setting checkbox " + propName + "." + elemName + " to: " + newValue, "System");
+
+        $.ajax({
+          type: 'POST',
+          url: '/api/devices/' + encodeURIComponent(deviceName) + '/properties/' + encodeURIComponent(propName) + '/set',
+          data: JSON.stringify({ elements: values }),
+          contentType: 'application/json',
+          success: function(response) {
+            addMessage("success", "Checkbox " + propName + "." + elemName + " set successfully", deviceName);
+          },
+          error: function(xhr, status, error) {
+            var errorMsg = xhr.responseJSON?.detail || error;
+            addMessage("error", "Failed to set checkbox " + propName + "." + elemName + ": " + errorMsg, "System");
+          }
+        });
       });
     }
 
