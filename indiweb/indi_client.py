@@ -14,7 +14,7 @@ except ImportError:
 
 class INDIClient(PyIndi.BaseClient):
     """
-    A simple INDI client for connecting to an INDI server and managing device properties.
+    An INDI client for connecting to an INDI server and managing device properties.
     Based on the INDI protocol: https://indilib.org/develop/developer-manual/101-standard-properties.html
     """
 
@@ -23,7 +23,6 @@ class INDIClient(PyIndi.BaseClient):
         self.host = host
         self.port = port
         self.connected = False
-        self.devices = {}
         self.properties = defaultdict(dict)
         self.dirty_properties = defaultdict(set)  # Track changed properties per device
         self.property_timestamps = defaultdict(dict)  # Track when properties were last updated
@@ -58,27 +57,16 @@ class INDIClient(PyIndi.BaseClient):
                 self.connected = False
                 logging.info("Disconnected from INDI server")
 
-    def send_message(self, message):
-        """Send a message to the INDI server (deprecated - use PyIndi methods)"""
-        # This method is kept for compatibility but should not be used
-        # with PyIndi client. Use sendNewProperty and other PyIndi methods instead.
-        logging.warning("send_message is deprecated with PyIndi client")
-        return False
-
     # PyIndi callback methods
     def newDevice(self, device):
         """Called when a new device is created"""
         device_name = device.getDeviceName()
-        if device_name not in self.devices:
-            self.devices[device_name] = {}
         logging.debug(f"New device: {device_name}")
         self._notify_listeners('device_added', device_name, None)
 
     def removeDevice(self, device):
         """Called when a device is removed"""
         device_name = device.getDeviceName()
-        if device_name in self.devices:
-            del self.devices[device_name]
         if device_name in self.properties:
             del self.properties[device_name]
         logging.debug(f"Removed device: {device_name}")
@@ -91,13 +79,10 @@ class INDIClient(PyIndi.BaseClient):
 
         property_data = self._convert_property_to_dict(prop)
 
-        if device_name not in self.devices:
-            self.devices[device_name] = {}
         if device_name not in self.properties:
             self.properties[device_name] = {}
 
         self.properties[device_name][prop_name] = property_data
-        self.devices[device_name][prop_name] = property_data
 
         # Mark property as dirty (new property)
         self.dirty_properties[device_name].add(prop_name)
@@ -118,11 +103,9 @@ class INDIClient(PyIndi.BaseClient):
 
         if device_name in self.properties and prop_name in self.properties[device_name]:
             old_prop = self.properties[device_name][prop_name]
-            old_state = old_prop.get('state', 'idle')
 
             # Update the property data
             self.properties[device_name][prop_name] = property_data
-            self.devices[device_name][prop_name] = property_data
 
             # No need for completion tracking since all operations are now asynchronous
 
@@ -141,8 +124,6 @@ class INDIClient(PyIndi.BaseClient):
 
         if device_name in self.properties and prop_name in self.properties[device_name]:
             del self.properties[device_name][prop_name]
-            if device_name in self.devices and prop_name in self.devices[device_name]:
-                del self.devices[device_name][prop_name]
             self._notify_listeners('property_deleted', device_name, {'name': prop_name})
 
     def newMessage(self, device, message_id):
@@ -321,7 +302,7 @@ class INDIClient(PyIndi.BaseClient):
         if self.connected:
             pyindi_devices = self.getDevices()
             return [device.getDeviceName() for device in pyindi_devices]
-        return list(self.devices.keys())
+        return list(self.properties.keys())
 
     def get_device_properties(self, device_name):
         """Get all properties for a specific device"""
@@ -340,7 +321,7 @@ class INDIClient(PyIndi.BaseClient):
                 device = self.getDevice(device_name)
                 if device:
                     return True
-            elif device_name in self.devices:
+            elif device_name in self.properties:
                 return True
             time.sleep(0.1)
         return False
