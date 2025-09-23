@@ -564,23 +564,6 @@ async def restart_driver(label: str):
 ###############################################################################
 
 
-@app.get('/api/devices', tags=["Devices"])
-async def get_devices():
-    """
-    Gets a list of connected INDI devices as JSON.
-
-    Returns:
-        str: A JSON string representing the connected devices.
-    """
-    # Try INDI client first, fallback to old method
-    client = get_indi_client()
-    if client.is_connected():
-        devices = client.get_devices()
-        return JSONResponse(content=devices)
-    else:
-        return JSONResponse(content=indi_device.get_devices())
-
-
 @app.get('/device/{device_name}', response_class=HTMLResponse, tags=["Web Interface"])
 async def device_control_panel(request: Request, device_name: str):
     """
@@ -610,16 +593,78 @@ async def device_control_panel(request: Request, device_name: str):
         raise HTTPException(status_code=500, detail=f"Error loading device control panel: {str(e)}")
 
 
+@app.get('/api/devices', tags=["Devices"])
+async def get_devices():
+    """
+    Retrieve all currently connected INDI devices.
+
+    This endpoint returns a list of all devices currently connected
+    to the INDI server.
+
+    Returns:
+        list: Device names as an array of strings.
+
+    Example response:
+    ```json
+    [
+        "CCD Simulator",
+        "Telescope Simulator",
+        "..."
+    ]
+    ```
+
+    Raises:
+        503: Service unavailable if INDI server is not running
+    """
+    # Try INDI client first, fallback to old method
+    client = get_indi_client()
+    if client.is_connected():
+        devices = client.get_devices()
+        return JSONResponse(content=devices)
+    else:
+        return JSONResponse(content=indi_device.get_devices())
+
+
 @app.get('/api/devices/{device_name}/structure', tags=["Devices"])
 async def get_device_structure(device_name: str):
     """
-    Gets the property structure for a specific device.
+    Retrieve the complete property structure for a specific INDI device.
+
+    This endpoint provides the hierarchical structure of all properties available
+    on the specified device, organized by property groups. This is essential for
+    building dynamic user interfaces that can adapt to different device types.
 
     Args:
-        device_name (str): The name of the device.
+        device_name (str): The exact name of the INDI device (case-sensitive)
 
     Returns:
-        dict: A dictionary containing the device property structure grouped by property groups.
+        dict: Nested dictionary containing the complete device structure:
+            - Top level: property group names
+            - Second level: property names within each group
+            - Third level: property metadata and element definitions
+
+    Example response:
+    ```json
+    {
+        "Main Control": {
+            "CONNECTION": {
+                "type": "Switch",
+                "perm": "rw",
+                "state": "Ok",
+                "elements": {
+                    "CONNECT": {"value": "On", "label": "Connect", ...},
+                    "DISCONNECT": {"value": "Off", "label": "Disconnect", ...}
+                },
+                ...
+            }
+        },
+        ...
+    }
+    ```
+
+    Raises:
+        404: Device not found or not available
+        503: INDI server not running or client not connected
     """
     client = get_indi_client()
     if not client.is_connected():
@@ -651,14 +696,33 @@ async def get_device_structure(device_name: str):
 @app.get('/api/devices/{device_name}/poll', tags=["Devices"])
 async def poll_device_properties(device_name: str, since: float = None):
     """
-    Polls for properties that have changed since last check.
+    Poll for device properties that have changed since a specific timestamp.
+
+    This endpoint enables real-time monitoring by returning only the
+    properties that have been modified since the last check. 
 
     Args:
-        device_name (str): The name of the device.
-        since (float): Timestamp since when to check for changes (optional).
+        device_name (str): The exact name of the INDI device to monitor
+        since (float, optional): Unix timestamp (seconds since epoch) to check
+                                changes from. If omitted, returns all dirty properties.
 
     Returns:
-        list: A list of property names that have changed.
+        list: Array of property names that have changed since the specified timestamp
+
+    Example response:
+    ```json
+    [
+        "EQUATORIAL_EOD_COORD"
+    ]
+    ```
+
+    Example request:
+    ```
+    GET /api/devices/CCD Simulator/poll?since=1641024000.5
+    ```
+
+    Raises:
+        503: INDI client not connected to server
     """
     client = get_indi_client()
     if not client.is_connected():
@@ -671,14 +735,56 @@ async def poll_device_properties(device_name: str, since: float = None):
 @app.post('/api/devices/{device_name}/properties/batch', tags=["Devices"])
 async def get_changed_properties(device_name: str, request: Request):
     """
-    Gets current values for specified properties.
+    Retrieve current values for multiple properties in a single request.
+
+    This batch endpoint allows efficient retrieval of multiple property values
+    at once, reducing the number of HTTP requests needed for UI updates.
+    Particularly useful when updating dashboard displays or status panels.
 
     Args:
-        device_name (str): The name of the device.
-        request: The request containing the list of property names.
+        device_name (str): The exact name of the INDI device
+        request: JSON request body containing the list of property names to fetch
+
+    Request body schema:
+    ```json
+    {
+        "properties": ["property1", "property2", "property3"]
+    }
+    ```
 
     Returns:
-        dict: Current values for the specified properties.
+        dict: Current values for the specified properties, keyed by property name
+
+    Example request:
+    ```json
+    {
+        "properties": ["CCD_TEMPERATURE", "CCD_EXPOSURE"]
+    }
+    ```
+
+    Example response:
+    ```json
+    {
+        "CCD_TEMPERATURE": {
+            "type": "Number",
+            "state": "Ok",
+            "elements": {
+                "CCD_TEMPERATURE_VALUE": {"value": -10.5}
+            }
+        },
+        "CCD_EXPOSURE": {
+            "type": "Number",
+            "state": "Busy",
+            "elements": {
+                "CCD_EXPOSURE_VALUE": {"value": 30.0}
+            }
+        }
+    }
+    ```
+
+    Raises:
+        400: No property names provided in request,
+        503: INDI client not connected to server
     """
     client = get_indi_client()
     if not client.is_connected():
@@ -697,13 +803,39 @@ async def get_changed_properties(device_name: str, request: Request):
 @app.get('/api/devices/{device_name}/groups', tags=["Devices"])
 async def get_device_groups(device_name: str):
     """
-    Gets property groups for a specific device.
+    Retrieve property groups and their associated properties for a device.
+
+    This endpoint provides a simplified view of device properties organized by
+    functional groups (e.g., "Main Control", "Image Settings", "Cooler").
+    Useful for creating tabbed interfaces or organizing device controls.
 
     Args:
-        device_name (str): The name of the device.
+        device_name (str): The exact name of the INDI device
 
     Returns:
-        dict: A dictionary containing device property groups.
+        dict: Property groups with arrays of property names in each group
+
+    Example response:
+    ```json
+    {
+        "Main Control": [
+            "CONNECTION",
+            "ON_COORD_SET",
+            "EQUATORIAL_EOD_COORD",
+            ...
+        ],
+        "Connection": [
+            "DRIVER_INFO",
+            CONNECTION_MODE",
+            ...
+        ],
+        ...
+    }
+    ```
+
+    Raises:
+        404: Device not found
+        503: INDI client not connected to server
     """
     client = get_indi_client()
     if not client.is_connected():
@@ -727,14 +859,65 @@ async def get_device_groups(device_name: str):
 @app.get('/api/devices/{device_name}/properties/{property_name}', tags=["Devices"])
 async def get_device_property(device_name: str, property_name: str):
     """
-    Gets a specific property for a device.
+    Retrieve detailed information for a specific device property.
+
+    This endpoint provides metadata and current values for a single
+    property, including type information, permissions, state, and all elements
+    with their current values and constraints.
 
     Args:
-        device_name (str): The name of the device.
-        property_name (str): The name of the property.
+        device_name (str): The exact name of the INDI device
+        property_name (str): The exact name of the property to retrieve
 
     Returns:
-        dict: The property data.
+        dict: Complete property information including metadata and current values
+
+    Example response for a Number property:
+    ```json
+    {
+        "name": "TELESCOPE_TRACK_RATE",
+        "label": "Track Rates",
+        "group": "Main Control",
+        "type": "number",
+        "state": "idle",
+        "perm": "rw",
+        "rule": null,
+        "elements": {
+            "TRACK_RATE_RA": {
+            "name": "TRACK_RATE_RA",
+            "label": "RA (arcsecs/s)",
+            "value": "15.041067178670204",
+            "min": "-16384.0",
+            "max": "16384.0",
+            "step": "1e-06",
+            "format": "%.6f",
+            "formatted_value": "15.041067"
+        },
+        ...
+    }
+    ```
+    
+    Example response for a Switch property:
+    ```json
+	{
+        "name": "CONNECTION",
+        "label": "Connection",
+        "group": "Main Control",
+        "type": "switch",
+        "state": "ok",
+        "perm": "rw",
+        "rule": "OneOfMany",
+        "elements": {
+            "CONNECT": { "name": "CONNECT", "label": "Connect", "value": "On" },
+            "DISCONNECT": { "name": "DISCONNECT", "label": "Disconnect", "value": "Off" 
+        },
+        "device": "Telescope Simulator"
+    }
+    ```
+
+    Raises:
+        404: Property not found on the specified device
+        503: INDI client not connected to server
     """
     client = get_indi_client()
     if not client.is_connected():
@@ -750,15 +933,76 @@ async def get_device_property(device_name: str, property_name: str):
 @app.post('/api/devices/{device_name}/properties/{property_name}/set', tags=["Devices"])
 async def set_device_property(device_name: str, property_name: str, request: Request):
     """
-    Sets values for a specific property on a device.
+    Set new values for elements within a specific device property.
+
+    This endpoint allows modification of property element values, such as changing
+    exposure time, connecting/disconnecting devices, or adjusting temperature setpoints.
+    The property must be writable (permission 'rw' or 'wo') for the operation to succeed.
 
     Args:
-        device_name (str): The name of the device.
-        property_name (str): The name of the property.
-        request: The request containing the property element values.
+        device_name (str): The exact name of the INDI device
+        property_name (str): The exact name of the property to modify
+        request: JSON request body containing element values to set
+
+    Request body schema:
+    ```json
+    {
+        "elements": {
+            "element_name1": "value1",
+            "element_name2": "value2"
+        }
+    }
+    ```
 
     Returns:
-        dict: Success response or error details.
+        dict: Operation result with success status and details
+
+    Example request (setting exposure time):
+    ```json
+    {
+        "elements": {
+            "CCD_EXPOSURE_VALUE": 30.0
+        }
+    }
+    ```
+
+    Example request (connecting device):
+    ```json
+    {
+        "elements": {
+            "CONNECT": "On",
+            "DISCONNECT": "Off"
+        }
+    }
+    ```
+
+    Example success response:
+    ```json
+    {
+        "success": true,
+        "message": "Property set successfully",
+        "device": "CCD Simulator",
+        "property": "CCD_EXPOSURE",
+        "elements": {
+            "CCD_EXPOSURE_VALUE": 30.0
+        }
+    }
+    ```
+
+    Example error response:
+    ```json
+    {
+        "success": false,
+        "error": "Property is read-only",
+        "error_type": "permission_denied"
+    }
+    ```
+
+    Raises:
+        400: No element values provided or invalid values
+        404: Property or element not found
+        422: Property is read-only or validation failed
+        503: INDI client not connected to server
     """
     client = get_indi_client()
     if not client.is_connected():
