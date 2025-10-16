@@ -443,6 +443,22 @@
         typeInfo += ' (' + prop.rule + ')';
       }
       html += '<small class="text-muted">(' + prop.name + ') - ' + typeInfo + '</small>';
+
+      // Add info icon for switch properties with tooltip showing names and labels
+      if (prop.type === 'switch') {
+        var tooltipContent = '<div class="switch-tooltip-title">Switch elements in order:</div>';
+        var elementIndex = 1;
+        for (var elemName in prop.elements) {
+          var elem = prop.elements[elemName];
+          tooltipContent += '<div class="switch-tooltip-item">' + elementIndex + '. ' + (elem.label || elemName) + ' (Element ID: ' + elemName + ')</div>';
+          elementIndex++;
+        }
+        html += '<span class="switch-info-icon" style="margin-left: 8px; cursor: help; color: #5bc0de; font-size: 16px;">';
+        html += 'ⓘ';
+        html += '<span class="switch-info-tooltip">' + tooltipContent + '</span>';
+        html += '</span>';
+      }
+
       html += '</div>';
 
       if (prop.type === 'text') {

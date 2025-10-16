@@ -904,6 +904,88 @@ body.disconnected::before {
   border-left: 4px solid #428bca;
 }
 
+/* Switch info icon styling */
+.switch-info-icon {
+  display: inline-block;
+  margin-left: 8px;
+  cursor: help;
+  color: #5bc0de;
+  font-size: 16px;
+  font-weight: bold;
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+.switch-info-icon:hover {
+  color: #31b0d5;
+  text-shadow: 0 0 3px rgba(91, 192, 222, 0.5);
+}
+
+/* Custom tooltip */
+.switch-info-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  z-index: 1000;
+  background-color: #fff;
+  color: #000;
+  text-align: left;
+  border-radius: 4px;
+  padding: 10px 12px;
+  left: 100%;
+  margin-left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid #ccc;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  font-size: 13px;
+  font-weight: normal;
+}
+
+.switch-info-tooltip::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  margin-top: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent #fff transparent transparent;
+}
+
+.switch-info-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  margin-top: -6px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent #ccc transparent transparent;
+  z-index: -1;
+}
+
+.switch-info-icon:hover .switch-info-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+.switch-tooltip-title {
+  font-weight: bold;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 4px;
+  color: #333;
+}
+
+.switch-tooltip-item {
+  padding: 2px 0;
+  line-height: 1.4;
+  color: #000;
+}
+
 /* Property type indicators */
 .property-type-text::before {
   content: "T";
