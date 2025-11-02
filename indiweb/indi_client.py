@@ -24,11 +24,8 @@ class INDIClient(PyIndi.BaseClient):
         self.port = port
         self.connected = False
         self.properties = defaultdict(dict)
-        self.dirty_properties = defaultdict(set)  # Track changed properties per device
-        self.property_timestamps = defaultdict(dict)  # Track when properties were last updated
         self.auto_connect_devices = True
         self.listeners = []
-        # Removed pending_operations - all operations are now asynchronous
         self.connection_lock = threading.Lock()
 
     def connect(self):
@@ -84,9 +81,6 @@ class INDIClient(PyIndi.BaseClient):
 
         self.properties[device_name][prop_name] = property_data
 
-        # Mark property as dirty (new property)
-        self.dirty_properties[device_name].add(prop_name)
-
         # Auto-connect device if it has a CONNECTION property
         if self.auto_connect_devices and prop_name == 'CONNECTION':
             self._auto_connect_device(device_name)
@@ -102,17 +96,8 @@ class INDIClient(PyIndi.BaseClient):
         property_data = self._convert_property_to_dict(prop)
 
         if device_name in self.properties and prop_name in self.properties[device_name]:
-            old_prop = self.properties[device_name][prop_name]
-
             # Update the property data
             self.properties[device_name][prop_name] = property_data
-
-            # No need for completion tracking since all operations are now asynchronous
-
-            # Mark property as dirty (updated property)
-            self.dirty_properties[device_name].add(prop_name)
-            # Update timestamp for this property
-            self.property_timestamps[device_name][prop_name] = time.time()
 
             # Notify listeners
             self._notify_listeners('property_updated', device_name, property_data)
@@ -520,44 +505,6 @@ class INDIClient(PyIndi.BaseClient):
             structure[group_name][prop_name] = prop_data
 
         return structure
-
-    def get_dirty_properties(self, device_name, since_timestamp=None):
-        """Get list of properties that have changed since last check"""
-        if since_timestamp is None:
-            since_timestamp = time.time() - 10  # Default: get changes from last 10 seconds
-
-        dirty_props = []
-        current_time = time.time()
-
-        for prop_name, update_time in self.property_timestamps.get(device_name, {}).items():
-            if update_time > since_timestamp:
-                dirty_props.append(prop_name)
-
-        # Clean up old timestamps (older than 60 seconds)
-        cutoff_time = current_time - 60
-        if device_name in self.property_timestamps:
-            props_to_remove = [
-                prop_name for prop_name, update_time
-                in self.property_timestamps[device_name].items()
-                if update_time < cutoff_time
-            ]
-            for prop_name in props_to_remove:
-                del self.property_timestamps[device_name][prop_name]
-                self.dirty_properties[device_name].discard(prop_name)
-
-        return dirty_props
-
-    def get_changed_properties(self, device_name, property_names):
-        """Get current values for specified properties"""
-        if device_name not in self.properties:
-            return {}
-
-        result = {}
-        for prop_name in property_names:
-            if prop_name in self.properties[device_name]:
-                result[prop_name] = self.properties[device_name][prop_name]
-
-        return result
 
     def _format_number_value(self, value, format_str):
         """Format a number value according to INDI printf-style format"""
