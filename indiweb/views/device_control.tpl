@@ -423,13 +423,13 @@
       // Update individual property elements in the UI without rebuilding entire structure
       for (var elemName in prop.elements) {
         var element = prop.elements[elemName];
-        var elemSelector = '[data-property="' + propName + '"][data-element="' + elemName + '"]';
+        var valueSelector = '.element-value[data-property="' + propName + '"][data-element="' + elemName + '"]';
 
         if (prop.type === 'text') {
-          $(elemSelector).text(element.value || '');
+          $(valueSelector).text(element.value || '');
         } else if (prop.type === 'number') {
           // Use formatted_value if available, otherwise fall back to value
-          $(elemSelector).text(element.formatted_value || element.value || '');
+          $(valueSelector).text(element.formatted_value || element.value || '');
         } else if (prop.type === 'switch') {
           // Update switch elements based on rule type
           var rule = prop.rule || 'OneOfMany';
@@ -447,7 +447,7 @@
                               .addClass(isOn ? 'checkbox-checked' : 'checkbox-unchecked');
           } else {
             // Fallback to original text update
-            $(elemSelector).text(element.value || 'Off');
+            $(valueSelector).text(element.value || 'Off');
           }
         } else if (prop.type === 'light') {
           var lightSelector = '.light-indicator[data-property="' + propName + '"][data-element="' + elemName + '"]';

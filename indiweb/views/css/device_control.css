@@ -92,6 +92,8 @@
 
 .set-button-container {
   grid-column: 4;
+  grid-row: 1 / 1;
+  align-items: flex-start;
 }
 
 .element-input {
