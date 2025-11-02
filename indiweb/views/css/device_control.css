@@ -21,19 +21,24 @@
   border: 1px solid #e7e7e7;
   border-radius: 3px;
   background-color: white;
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  gap: 8px 12px;
+  align-items: center;
 }
 
 .property-header {
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
 }
 
 .property-label {
   font-weight: bold;
-  margin-right: 10px;
-  min-width: 150px;
+  margin-left: 8px;
   color: #333;
+  white-space: nowrap;
 }
 
 .property-state {
@@ -62,24 +67,31 @@
 }
 
 .property-elements {
-  margin-left: 20px;
+  display: contents;
 }
 
 .element-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-  padding: 5px 0;
-  flex-wrap: wrap;
-  gap: 5px;
+  display: contents;
 }
 
 .element-label {
-  min-width: 140px;
-  margin-right: 10px;
+  grid-column: 2;
   font-weight: normal;
   color: #666;
-  flex-shrink: 0;
+  white-space: nowrap;
+  text-align: right;
+  padding-right: 8px;
+}
+
+.element-value-container {
+  grid-column: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.set-button-container {
+  grid-column: 4;
 }
 
 .element-input {
@@ -150,6 +162,7 @@
 }
 
 .switch-group {
+  grid-column: 2 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
@@ -700,24 +713,52 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .element-row {
-    flex-direction: column;
-    align-items: flex-start;
+  .property-item {
+    grid-template-columns: auto 1fr auto;
+    gap: 4px 8px;
+    padding: 8px;
+    margin-bottom: 10px;
+  }
+
+  .property-header {
+    grid-column: 1 / -1;
+    margin-bottom: 6px;
   }
 
   .element-label {
-    min-width: auto;
-    margin-bottom: 5px;
+    grid-column: 1;
+    text-align: left;
+    padding-right: 6px;
+    font-weight: normal;
+    font-size: 12px;
+    min-width: 80px;
   }
 
-  .element-input {
-    max-width: 100%;
-    width: 100%;
+  .element-value-container {
+    grid-column: 2;
+    margin-bottom: 0;
+  }
+
+  .set-button-container {
+    grid-column: 2;
+    grid-row: -1 / -1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding-bottom: 0;
   }
 
   .switch-group {
-    flex-direction: column;
-    gap: 5px;
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 4px 0;
+  }
+
+  .element-input {
+    max-width: 150px;
+    width: 150px;
   }
 
   .switch-radio-group,
@@ -727,44 +768,26 @@
 
   .switch-radio-item,
   .switch-checkbox-item {
-    padding: 6px 8px;
+    padding: 4px 6px;
   }
 
   .switch-button-group {
-    flex-direction: column;
-    display: flex;
-    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
     width: auto;
   }
 
   .switch-button {
-    border-radius: 0 !important;
-    border-right: none !important;
-    border-bottom: 1px solid #ddd;
-    text-align: left;
-    width: auto;
-    min-width: 120px;
-  }
-
-  .switch-button:first-child {
-    border-top-left-radius: 3px !important;
-    border-top-right-radius: 3px !important;
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 3px !important;
+    border-right: 1px solid #ddd !important;
+    margin: 1px;
   }
 
   .switch-button:last-child {
-    border-bottom-left-radius: 3px !important;
-    border-bottom-right-radius: 3px !important;
-    border-bottom: none !important;
-  }
-
-  .property-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .property-label {
-    min-width: auto;
-    margin-bottom: 5px;
+    border-right: none !important;
   }
 }
 

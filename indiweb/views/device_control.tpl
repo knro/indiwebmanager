@@ -467,14 +467,16 @@
 
       for (var propName in groupProperties) {
         var prop = groupProperties[propName];
-        // Determine permission class
+        // Determine permission class (only in development mode)
         var permClass = '';
-        if (prop.perm === 'ro') {
-          permClass = 'property-readonly';
-        } else if (prop.perm === 'wo') {
-          permClass = 'property-writeonly';
-        } else if (prop.perm === 'rw') {
-          permClass = 'property-readwrite';
+        if (developmentMode) {
+          if (prop.perm === 'ro') {
+            permClass = 'property-readonly';
+          } else if (prop.perm === 'wo') {
+            permClass = 'property-writeonly';
+          } else if (prop.perm === 'rw') {
+            permClass = 'property-readwrite';
+          }
         }
 
         html += '<div class="property-item ' + permClass + '" id="prop-' + prop.name + '">';
@@ -486,16 +488,6 @@
     }
 
     function generatePropertyContent(prop) {
-      // Determine permission class
-      var permClass = '';
-      if (prop.perm === 'ro') {
-        permClass = 'property-readonly';
-      } else if (prop.perm === 'wo') {
-        permClass = 'property-writeonly';
-      } else if (prop.perm === 'rw') {
-        permClass = 'property-readwrite';
-      }
-
       var html = '<div class="property-header">';
       html += '<span class="property-state state-' + (prop.state || 'idle') + '" data-property="' + prop.name + '"></span>';
       html += '<span class="property-label">' + (prop.label || prop.name) + '</span>';
@@ -507,21 +499,6 @@
           typeInfo += ' (' + prop.rule + ')';
         }
         html += '<small class="text-muted">(' + prop.name + ') - ' + typeInfo + '</small>';
-
-        // Add info icon for switch properties with tooltip showing names and labels
-        if (prop.type === 'switch') {
-          var tooltipContent = '<div class="switch-tooltip-title">Switch elements in order:</div>';
-          var elementIndex = 1;
-          for (var elemName in prop.elements) {
-            var elem = prop.elements[elemName];
-            tooltipContent += '<div class="switch-tooltip-item">' + elementIndex + '. ' + (elem.label || elemName) + ' (Element ID: ' + elemName + ')</div>';
-            elementIndex++;
-          }
-          html += '<span class="switch-info-icon" style="margin-left: 8px; cursor: help; color: #5bc0de; font-size: 16px;">';
-          html += 'ⓘ';
-          html += '<span class="switch-info-tooltip">' + tooltipContent + '</span>';
-          html += '</span>';
-        }
       }
 
       html += '</div>';
@@ -542,17 +519,21 @@
     function generateTextProperty(prop) {
       var html = '<div class="property-elements">';
       var isWritable = (prop.perm === 'rw' || prop.perm === 'wo');
+      var elemNames = Object.keys(prop.elements);
 
-      for (var elemName in prop.elements) {
+      for (var i = 0; i < elemNames.length; i++) {
+        var elemName = elemNames[i];
         var elem = prop.elements[elemName];
-        html += '<div class="element-row">';
+        var isLastElement = (i === elemNames.length - 1);
+
+        // Element label (column 2)
         var labelTitle = developmentMode ? ' title="Element ID: ' + elemName + '"' : '';
         html += '<span class="element-label"' + labelTitle + '>' + (elem.label || elemName) + ':</span>';
 
-        if (isWritable) {
-          // Writable property: current value + input controls
-          html += '<div class="element-value-controls">';
+        // Element value and controls (column 3)
+        html += '<div class="element-value-container">';
 
+        if (isWritable) {
           // For read-write properties, show current value and copy button
           if (prop.perm === 'rw') {
             html += '<span class="element-value element-current-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
@@ -566,26 +547,23 @@
           html += '<input type="text" class="form-control input-sm element-input" ';
           html += 'data-property="' + prop.name + '" data-element="' + elemName + '" ';
           html += 'placeholder="Enter text">';
-          html += '</div>';
         } else {
           // Read-only property: just the value
           html += '<span class="element-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
           html += (elem.value || '(empty)');
           html += '</span>';
         }
+        html += '</div>';
 
-        html += '</div>';
-      }
-
-      // Add set button for writable properties (inline after last element)
-      if (isWritable) {
-        html += '<div class="element-row">';
-        html += '<span class="element-label"></span>'; // Empty label for alignment
-        html += '<div class="property-set-control">';
-        html += '<button type="button" class="btn btn-sm btn-primary set-property-btn" ';
-        html += 'data-property="' + prop.name + '">Set</button>';
-        html += '</div>';
-        html += '</div>';
+        // Set button on last element (column 4)
+        if (isWritable && isLastElement) {
+          html += '<div class="set-button-container">';
+          html += '<button type="button" class="btn btn-sm btn-primary set-property-btn" ';
+          html += 'data-property="' + prop.name + '">Set</button>';
+          html += '</div>';
+        } else {
+          html += '<span></span>'; // Empty placeholder for column 4
+        }
       }
 
       html += '</div>';
@@ -595,17 +573,21 @@
     function generateNumberProperty(prop) {
       var html = '<div class="property-elements">';
       var isWritable = (prop.perm === 'rw' || prop.perm === 'wo');
+      var elemNames = Object.keys(prop.elements);
 
-      for (var elemName in prop.elements) {
+      for (var i = 0; i < elemNames.length; i++) {
+        var elemName = elemNames[i];
         var elem = prop.elements[elemName];
-        html += '<div class="element-row">';
+        var isLastElement = (i === elemNames.length - 1);
+
+        // Element label (column 2)
         var labelTitle = developmentMode ? ' title="Element ID: ' + elemName + '"' : '';
         html += '<span class="element-label"' + labelTitle + '>' + (elem.label || elemName) + ':</span>';
 
-        if (isWritable) {
-          // Writable property: current value + input controls
-          html += '<div class="element-value-controls">';
+        // Element value and controls (column 3)
+        html += '<div class="element-value-container">';
 
+        if (isWritable) {
           // For read-write properties, show current value and copy button
           if (prop.perm === 'rw') {
             html += '<span class="element-value element-current-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
@@ -634,7 +616,6 @@
             if (elem.step !== undefined) html += 'step="' + elem.step + '" ';
           }
           html += 'placeholder="Enter value">';
-          html += '</div>';
         } else {
           // Read-only property: just the value
           html += '<span class="element-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
@@ -645,19 +626,17 @@
             html += '<small class="text-muted"> [' + elem.min + ' - ' + elem.max + ']</small>';
           }
         }
+        html += '</div>';
 
-        html += '</div>';
-      }
-
-      // Add set button for writable properties (inline after last element)
-      if (isWritable) {
-        html += '<div class="element-row">';
-        html += '<span class="element-label"></span>'; // Empty label for alignment
-        html += '<div class="property-set-control">';
-        html += '<button type="button" class="btn btn-sm btn-primary set-property-btn" ';
-        html += 'data-property="' + prop.name + '">Set</button>';
-        html += '</div>';
-        html += '</div>';
+        // Set button on last element (column 4)
+        if (isWritable && isLastElement) {
+          html += '<div class="set-button-container">';
+          html += '<button type="button" class="btn btn-sm btn-primary set-property-btn" ';
+          html += 'data-property="' + prop.name + '">Set</button>';
+          html += '</div>';
+        } else {
+          html += '<span></span>'; // Empty placeholder for column 4
+        }
       }
 
       html += '</div>';
@@ -732,17 +711,27 @@
 
     function generateLightProperty(prop) {
       var html = '<div class="property-elements">';
-      for (var elemName in prop.elements) {
+      var elemNames = Object.keys(prop.elements);
+
+      for (var i = 0; i < elemNames.length; i++) {
+        var elemName = elemNames[i];
         var elem = prop.elements[elemName];
         var lightClass = 'state-' + (elem.value || 'idle').toLowerCase();
-        html += '<div class="element-row">';
-        html += '<span class="light-indicator ' + lightClass + '" data-property="' + prop.name + '" data-element="' + elemName + '"></span>';
+
+        // Element label (column 2)
         var labelTitle = developmentMode ? ' title="Element ID: ' + elemName + '"' : '';
-        html += '<span class="element-label"' + labelTitle + '>' + (elem.label || elemName) + ': </span>';
+        html += '<span class="element-label"' + labelTitle + '>' + (elem.label || elemName) + ':</span>';
+
+        // Light indicator and value (column 3)
+        html += '<div class="element-value-container">';
+        html += '<span class="light-indicator ' + lightClass + '" data-property="' + prop.name + '" data-element="' + elemName + '"></span>';
         html += '<span class="element-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
         html += (elem.value || 'Unknown');
         html += '</span>';
         html += '</div>';
+
+        // Empty placeholder for column 4 (no buttons for lights)
+        html += '<span></span>';
       }
       html += '</div>';
       return html;
