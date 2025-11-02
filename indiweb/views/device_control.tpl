@@ -14,22 +14,13 @@
   <div class="container-fluid">
     <div class="row">
       <div class="col-md-12">
-        <h3>{{device_name}} Control Panel</h3>
+        <h3>
+          {{device_name}} Control Panel
+          <span id="device_status" class="label label-info" style="display: none; margin-left: 10px;">Loading...</span>
+        </h3>
 
-        <!-- Device Status -->
-        <div class="connection-controls">
-          <div class="row">
-            <div class="col-md-12">
-              <div class="form-group">
-                <label>Device Status:</label>
-                <span id="device_status" class="label label-info">Loading...</span>
-                <small class="text-muted" style="margin-left: 10px;">Real-time updates via WebSocket</small>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Legend -->
+        <!-- Legend (Development Mode Only) -->
+        {% if development_mode %}
         <div class="legend-section">
           <div class="row">
             <div class="col-md-6">
@@ -72,6 +63,7 @@
             </div>
           </div>
         </div>
+        {% endif %}
 
         <!-- Property Groups Tabs -->
         <ul class="nav nav-tabs" id="property-tabs" role="tablist">
@@ -107,6 +99,7 @@
   <script src="/static/js/jquery-ui.min.js"></script>
   <script>
     var deviceName = "{{device_name}}";
+    var developmentMode = {{ 'true' if development_mode else 'false' }};
     var deviceStructure = {};
     var lastUpdateTime = Date.now();
     var messageLog = [];
@@ -134,7 +127,8 @@
     function loadDeviceStructure() {
       $("#device_status").removeClass("label-success label-warning label-danger")
                         .addClass("label-info")
-                        .text("Loading...");
+                        .text("Loading...")
+                        .show();
 
       $.getJSON("/api/devices/" + encodeURIComponent(deviceName) + "/structure", function(data) {
         console.log('Loaded device structure:', data);
@@ -168,6 +162,12 @@
       // Determine WebSocket protocol (ws:// or wss://)
       var wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       var wsUrl = wsProtocol + '//' + window.location.host + '/evt_device/' + encodeURIComponent(deviceName);
+
+      // Show connecting status
+      $("#device_status").removeClass("label-danger label-warning")
+                        .addClass("label-info")
+                        .text("Connecting...")
+                        .show();
 
       addMessage("info", "Connecting to WebSocket: " + wsUrl, "System");
 
@@ -271,18 +271,19 @@
         $('body').removeClass('disconnected');
         $('.set-property-btn, .copy-value-btn, .switch-button, .switch-checkbox, .element-input').prop('disabled', false);
 
-        $("#device_status").removeClass("label-warning label-danger")
-                          .addClass("label-success")
-                          .text("Connected - Real-time updates");
+        // Hide status badge when connected
+        $("#device_status").hide();
         addMessage("success", "WebSocket connection restored", "System");
       } else {
         // Add disconnected styling and disable all interactive controls
         $('body').addClass('disconnected');
         $('.set-property-btn, .copy-value-btn, .switch-button, .switch-checkbox, .element-input').prop('disabled', true);
 
+        // Show status badge when disconnected
         $("#device_status").removeClass("label-success label-info")
                           .addClass("label-danger")
-                          .text("Disconnected");
+                          .text("Disconnected")
+                          .show();
         addMessage("error", "Connection lost - controls disabled", "System");
 
         // Start automatic reconnection attempts
@@ -292,7 +293,7 @@
 
     function attemptReconnection() {
       if (reconnectAttempts >= maxReconnectAttempts) {
-        $("#device_status").text("Disconnected - Max retries reached");
+        $("#device_status").text("Disconnected - Max retries reached").show();
         addMessage("error", "Maximum reconnection attempts reached. Please refresh the page.", "System");
         return;
       }
@@ -302,7 +303,8 @@
 
       $("#device_status").removeClass("label-danger")
                         .addClass("label-warning")
-                        .text("Reconnecting... (attempt " + reconnectAttempts + "/" + maxReconnectAttempts + ")");
+                        .text("Reconnecting... (attempt " + reconnectAttempts + "/" + maxReconnectAttempts + ")")
+                        .show();
 
       addMessage("info", "Attempting WebSocket reconnection #" + reconnectAttempts + " in " + (retryDelay/1000) + " seconds...", "System");
 
@@ -498,26 +500,28 @@
       html += '<span class="property-state state-' + (prop.state || 'idle') + '" data-property="' + prop.name + '"></span>';
       html += '<span class="property-label">' + (prop.label || prop.name) + '</span>';
 
-      // Show type and rule information
-      var typeInfo = prop.type;
-      if (prop.type === 'switch' && prop.rule) {
-        typeInfo += ' (' + prop.rule + ')';
-      }
-      html += '<small class="text-muted">(' + prop.name + ') - ' + typeInfo + '</small>';
-
-      // Add info icon for switch properties with tooltip showing names and labels
-      if (prop.type === 'switch') {
-        var tooltipContent = '<div class="switch-tooltip-title">Switch elements in order:</div>';
-        var elementIndex = 1;
-        for (var elemName in prop.elements) {
-          var elem = prop.elements[elemName];
-          tooltipContent += '<div class="switch-tooltip-item">' + elementIndex + '. ' + (elem.label || elemName) + ' (Element ID: ' + elemName + ')</div>';
-          elementIndex++;
+      // Show type and rule information (development mode only)
+      if (developmentMode) {
+        var typeInfo = prop.type;
+        if (prop.type === 'switch' && prop.rule) {
+          typeInfo += ' (' + prop.rule + ')';
         }
-        html += '<span class="switch-info-icon" style="margin-left: 8px; cursor: help; color: #5bc0de; font-size: 16px;">';
-        html += 'ⓘ';
-        html += '<span class="switch-info-tooltip">' + tooltipContent + '</span>';
-        html += '</span>';
+        html += '<small class="text-muted">(' + prop.name + ') - ' + typeInfo + '</small>';
+
+        // Add info icon for switch properties with tooltip showing names and labels
+        if (prop.type === 'switch') {
+          var tooltipContent = '<div class="switch-tooltip-title">Switch elements in order:</div>';
+          var elementIndex = 1;
+          for (var elemName in prop.elements) {
+            var elem = prop.elements[elemName];
+            tooltipContent += '<div class="switch-tooltip-item">' + elementIndex + '. ' + (elem.label || elemName) + ' (Element ID: ' + elemName + ')</div>';
+            elementIndex++;
+          }
+          html += '<span class="switch-info-icon" style="margin-left: 8px; cursor: help; color: #5bc0de; font-size: 16px;">';
+          html += 'ⓘ';
+          html += '<span class="switch-info-tooltip">' + tooltipContent + '</span>';
+          html += '</span>';
+        }
       }
 
       html += '</div>';
@@ -542,7 +546,8 @@
       for (var elemName in prop.elements) {
         var elem = prop.elements[elemName];
         html += '<div class="element-row">';
-        html += '<span class="element-label" title="Element ID: ' + elemName + '">' + (elem.label || elemName) + ':</span>';
+        var labelTitle = developmentMode ? ' title="Element ID: ' + elemName + '"' : '';
+        html += '<span class="element-label"' + labelTitle + '>' + (elem.label || elemName) + ':</span>';
 
         if (isWritable) {
           // Writable property: current value + input controls
@@ -594,7 +599,8 @@
       for (var elemName in prop.elements) {
         var elem = prop.elements[elemName];
         html += '<div class="element-row">';
-        html += '<span class="element-label" title="Element ID: ' + elemName + '">' + (elem.label || elemName) + ':</span>';
+        var labelTitle = developmentMode ? ' title="Element ID: ' + elemName + '"' : '';
+        html += '<span class="element-label"' + labelTitle + '>' + (elem.label || elemName) + ':</span>';
 
         if (isWritable) {
           // Writable property: current value + input controls
@@ -698,7 +704,8 @@
           html += '<div class="switch-checkbox-item-horizontal">';
           html += '<span class="switch-checkbox ' + (isOn ? 'checkbox-checked' : 'checkbox-unchecked') + '" ';
           html += 'data-property="' + prop.name + '" data-element="' + elemName + '"></span>';
-          html += '<span class="element-label" title="Element ID: ' + elemName + '">' + (elem.label || elemName) + '</span>';
+          var labelTitle = developmentMode ? ' title="Element ID: ' + elemName + '"' : '';
+          html += '<span class="element-label"' + labelTitle + '>' + (elem.label || elemName) + '</span>';
           html += '</div>';
         }
         html += '</div>';
@@ -709,7 +716,8 @@
           var elem = prop.elements[elemName];
           var isOn = elem.value === 'On' || elem.value === 'ON';
           html += '<span class="switch-element ' + (isOn ? 'switch-on' : 'switch-off') + '">';
-          html += '<span class="element-label" title="Element ID: ' + elemName + '">' + (elem.label || elemName) + ':</span> ';
+          var labelTitle = developmentMode ? ' title="Element ID: ' + elemName + '"' : '';
+          html += '<span class="element-label"' + labelTitle + '>' + (elem.label || elemName) + ':</span> ';
           html += '<strong data-property="' + prop.name + '" data-element="' + elemName + '">';
           html += (elem.value || 'Off');
           html += '</strong>';
@@ -729,7 +737,8 @@
         var lightClass = 'state-' + (elem.value || 'idle').toLowerCase();
         html += '<div class="element-row">';
         html += '<span class="light-indicator ' + lightClass + '" data-property="' + prop.name + '" data-element="' + elemName + '"></span>';
-        html += '<span class="element-label" title="Element ID: ' + elemName + '">' + (elem.label || elemName) + ': </span>';
+        var labelTitle = developmentMode ? ' title="Element ID: ' + elemName + '"' : '';
+        html += '<span class="element-label"' + labelTitle + '>' + (elem.label || elemName) + ': </span>';
         html += '<span class="element-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
         html += (elem.value || 'Unknown');
         html += '</span>';

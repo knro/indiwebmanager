@@ -54,8 +54,10 @@ parser.add_argument('--verbose', '-v', action='store_true',
 parser.add_argument('--logfile', '-l', help='log file name')
 parser.add_argument('--server', '-s', default='standalone',
                     help='HTTP server [standalone|apache] (default: standalone')
-parser.add_argument('--sudo', '-S', action='store_true',                    
+parser.add_argument('--sudo', '-S', action='store_true',
                     help='Run poweroff/reboot commands with sudo')
+parser.add_argument('--development', '-d', action='store_true',
+                    help='Show development information in device control panel (property names, element IDs, etc.)')
 
 args = parser.parse_args()
 
@@ -598,7 +600,11 @@ async def device_control_panel(request: Request, device_name: str):
 
         return templates.TemplateResponse(
             "device_control.tpl",
-            {"request": request, "device_name": device_name}
+            {
+                "request": request,
+                "device_name": device_name,
+                "development_mode": args.development
+            }
         )
     except Exception as e:
         logging.error(f"Error loading device control panel for {device_name}: {e}")
