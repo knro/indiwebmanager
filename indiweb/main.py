@@ -10,7 +10,7 @@ import subprocess
 import platform
 from importlib_metadata import version
 
-from fastapi import FastAPI, Request, Response, HTTPException
+from fastapi import FastAPI, Request, Response, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -20,6 +20,8 @@ from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
 from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
 from .database import Database
 from .device import Device
+from .indi_client import get_indi_client, start_indi_client, stop_indi_client
+from .evt_indi_client import get_websocket_manager, create_indi_event_listener
 
 # default settings
 WEB_HOST = '0.0.0.0'
@@ -52,8 +54,10 @@ parser.add_argument('--verbose', '-v', action='store_true',
 parser.add_argument('--logfile', '-l', help='log file name')
 parser.add_argument('--server', '-s', default='standalone',
                     help='HTTP server [standalone|apache] (default: standalone')
-parser.add_argument('--sudo', '-S', action='store_true',                    
+parser.add_argument('--sudo', '-S', action='store_true',
                     help='Run poweroff/reboot commands with sudo')
+parser.add_argument('--development', '-d', action='store_true',
+                    help='Show development information in device control panel (property names, element IDs, etc.)')
 
 args = parser.parse_args()
 
@@ -90,11 +94,11 @@ app = FastAPI(title="INDI Web Manager", version="1.0.0")
 
 # Serve static files
 app.mount("/static", StaticFiles(directory=views_path), name="static")
-app.mount("/favicon.ico", StaticFiles(directory=views_path), name="favicon.ico")
 
 
 saved_profile = None
 active_profile = ""
+evt_listener_initialized = False
 
 
 def start_profile(profile):
@@ -375,8 +379,29 @@ async def start_server(profile: str, response: Response):
     saved_profile = profile
     global active_profile
     active_profile = profile
+    global evt_listener_initialized
     response.set_cookie(key="indiserver_profile", value=profile, max_age=3600000, path='/')
     start_profile(profile)
+
+    # Start INDI client connection after a short delay
+    import asyncio
+    async def start_client():
+        await asyncio.sleep(3)  # Wait for server to start
+        profile_info = db.get_profile(profile)
+        port = profile_info.get('port', 7624) if profile_info else 7624
+        start_indi_client('localhost', port)
+
+        # Initialize event listener for WebSocket updates
+        global evt_listener_initialized
+        if not evt_listener_initialized:
+            indi_client = get_indi_client()
+            event_loop = asyncio.get_event_loop()
+            create_indi_event_listener(indi_client, event_loop)
+            evt_listener_initialized = True
+            logging.info("INDI event listener initialized for WebSocket updates")
+
+    asyncio.create_task(start_client())
+
     return {"message": f"INDI server started for profile {profile}"}
 
 
@@ -386,6 +411,7 @@ async def stop_server():
     Stops the INDI server.
     """
     indi_server.stop()
+    stop_indi_client()  # Also stop the INDI client
 
     global active_profile
     active_profile = ""
@@ -552,15 +578,466 @@ async def restart_driver(label: str):
 ###############################################################################
 
 
+@app.get('/device/{device_name}', response_class=HTMLResponse, tags=["Web Interface"])
+async def device_control_panel(request: Request, device_name: str):
+    """
+    Renders the device control panel page.
+
+    Args:
+        device_name (str): The name of the device to control.
+
+    Returns:
+        str: The rendered HTML template.
+    """
+    try:
+        logging.info(f"Loading device control panel for: {device_name}")
+
+        # Check if template file exists
+        import os
+        template_path = os.path.join(views_path, "device_control.tpl")
+        if not os.path.exists(template_path):
+            raise HTTPException(status_code=500, detail=f"Template not found: {template_path}")
+
+        return templates.TemplateResponse(
+            "device_control.tpl",
+            {
+                "request": request,
+                "device_name": device_name,
+                "development_mode": args.development
+            }
+        )
+    except Exception as e:
+        logging.error(f"Error loading device control panel for {device_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error loading device control panel: {str(e)}")
+
+
 @app.get('/api/devices', tags=["Devices"])
 async def get_devices():
     """
-    Gets a list of connected INDI devices as JSON.
+    Retrieve all currently connected INDI devices.
+
+    This endpoint returns a list of all devices currently connected
+    to the INDI server.
 
     Returns:
-        str: A JSON string representing the connected devices.
+        list: Device names as an array of strings.
+
+    Example response:
+    ```json
+    [
+        "CCD Simulator",
+        "Telescope Simulator",
+        "..."
+    ]
+    ```
+
+    Raises:
+        503: Service unavailable if INDI server is not running
     """
-    return JSONResponse(content=indi_device.get_devices())
+    # Try INDI client first, fallback to old method
+    client = get_indi_client()
+    if client.is_connected():
+        devices = client.get_devices()
+        return JSONResponse(content=devices)
+    else:
+        return JSONResponse(content=indi_device.get_devices())
+
+
+@app.get('/api/devices/{device_name}/structure', tags=["Devices"])
+async def get_device_structure(device_name: str):
+    """
+    Retrieve the complete property structure for a specific INDI device.
+
+    This endpoint provides the hierarchical structure of all properties available
+    on the specified device, organized by property groups. This is essential for
+    building dynamic user interfaces that can adapt to different device types.
+
+    Args:
+        device_name (str): The exact name of the INDI device (case-sensitive)
+
+    Returns:
+        dict: Nested dictionary containing the complete device structure:
+            - Top level: property group names
+            - Second level: property names within each group
+            - Third level: property metadata and element definitions
+
+    Example response:
+    ```json
+    {
+        "Main Control": {
+            "CONNECTION": {
+                "type": "Switch",
+                "perm": "rw",
+                "state": "Ok",
+                "elements": {
+                    "CONNECT": {"value": "On", "label": "Connect", ...},
+                    "DISCONNECT": {"value": "Off", "label": "Disconnect", ...}
+                },
+                ...
+            }
+        },
+        ...
+    }
+    ```
+
+    Raises:
+        404: Device not found or not available
+        503: INDI server not running or client not connected
+    """
+    global evt_listener_initialized
+    client = get_indi_client()
+    if not client.is_connected():
+        # Try to connect to INDI server
+        if indi_server.is_running():
+            port = 7624  # Default INDI port
+            profiles = db.get_profiles()
+            for profile in profiles:
+                if profile.get('name') == active_profile:
+                    port = profile.get('port', 7624)
+                    break
+
+            if not start_indi_client('localhost', port):
+                raise HTTPException(status_code=503, detail="Cannot connect to INDI server")
+
+            # Initialize event listener for WebSocket updates if not already done
+            if not evt_listener_initialized:
+                import asyncio
+                event_loop = asyncio.get_event_loop()
+                create_indi_event_listener(client, event_loop)
+                evt_listener_initialized = True
+                logging.info("INDI event listener initialized for WebSocket updates (via structure endpoint)")
+        else:
+            raise HTTPException(status_code=503, detail="INDI server is not running")
+
+    # Wait for device to be available
+    if not client.wait_for_device(device_name, timeout=3):
+        raise HTTPException(status_code=404, detail=f"Device '{device_name}' not found or not available")
+
+    structure = client.get_device_structure(device_name)
+    if not structure:
+        raise HTTPException(status_code=404, detail="Device found but no properties available yet. Try refreshing.")
+
+    return JSONResponse(content=structure)
+
+
+@app.get('/api/devices/{device_name}/groups', tags=["Devices"])
+async def get_device_groups(device_name: str):
+    """
+    Retrieve property groups and their associated properties for a device.
+
+    This endpoint provides a simplified view of device properties organized by
+    functional groups (e.g., "Main Control", "Image Settings", "Cooler").
+    Useful for creating tabbed interfaces or organizing device controls.
+
+    Args:
+        device_name (str): The exact name of the INDI device
+
+    Returns:
+        dict: Property groups with arrays of property names in each group
+
+    Example response:
+    ```json
+    {
+        "Main Control": [
+            "CONNECTION",
+            "ON_COORD_SET",
+            "EQUATORIAL_EOD_COORD",
+            ...
+        ],
+        "Connection": [
+            "DRIVER_INFO",
+            CONNECTION_MODE",
+            ...
+        ],
+        ...
+    }
+    ```
+
+    Raises:
+        404: Device not found
+        503: INDI client not connected to server
+    """
+    client = get_indi_client()
+    if not client.is_connected():
+        raise HTTPException(status_code=503, detail="INDI client not connected")
+
+    properties = client.get_device_properties(device_name)
+    if not properties:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    # Group properties by group name
+    groups = {}
+    for prop_name, prop_data in properties.items():
+        group_name = prop_data.get('group', 'Main')
+        if group_name not in groups:
+            groups[group_name] = []
+        groups[group_name].append(prop_name)
+
+    return JSONResponse(content=groups)
+
+
+@app.get('/api/devices/{device_name}/properties/{property_name}', tags=["Devices"])
+async def get_device_property(device_name: str, property_name: str):
+    """
+    Retrieve detailed information for a specific device property.
+
+    This endpoint provides metadata and current values for a single
+    property, including type information, permissions, state, and all elements
+    with their current values and constraints.
+
+    Args:
+        device_name (str): The exact name of the INDI device
+        property_name (str): The exact name of the property to retrieve
+
+    Returns:
+        dict: Complete property information including metadata and current values
+
+    Example response for a Number property:
+    ```json
+    {
+        "name": "TELESCOPE_TRACK_RATE",
+        "label": "Track Rates",
+        "group": "Main Control",
+        "type": "number",
+        "state": "idle",
+        "perm": "rw",
+        "rule": null,
+        "elements": {
+            "TRACK_RATE_RA": {
+            "name": "TRACK_RATE_RA",
+            "label": "RA (arcsecs/s)",
+            "value": "15.041067178670204",
+            "min": "-16384.0",
+            "max": "16384.0",
+            "step": "1e-06",
+            "format": "%.6f",
+            "formatted_value": "15.041067"
+        },
+        ...
+    }
+    ```
+    
+    Example response for a Switch property:
+    ```json
+	{
+        "name": "CONNECTION",
+        "label": "Connection",
+        "group": "Main Control",
+        "type": "switch",
+        "state": "ok",
+        "perm": "rw",
+        "rule": "OneOfMany",
+        "elements": {
+            "CONNECT": { "name": "CONNECT", "label": "Connect", "value": "On" },
+            "DISCONNECT": { "name": "DISCONNECT", "label": "Disconnect", "value": "Off" 
+        },
+        "device": "Telescope Simulator"
+    }
+    ```
+
+    Raises:
+        404: Property not found on the specified device
+        503: INDI client not connected to server
+    """
+    client = get_indi_client()
+    if not client.is_connected():
+        raise HTTPException(status_code=503, detail="INDI client not connected")
+
+    property_data = client.get_property(device_name, property_name)
+    if not property_data:
+        raise HTTPException(status_code=404, detail="Property not found")
+
+    return JSONResponse(content=property_data)
+
+
+@app.post('/api/devices/{device_name}/properties/{property_name}/set', tags=["Devices"])
+async def set_device_property(device_name: str, property_name: str, request: Request):
+    """
+    Set new values for elements within a specific device property.
+
+    This endpoint allows modification of property element values, such as changing
+    exposure time, connecting/disconnecting devices, or adjusting temperature setpoints.
+    The property must be writable (permission 'rw' or 'wo') for the operation to succeed.
+
+    Args:
+        device_name (str): The exact name of the INDI device
+        property_name (str): The exact name of the property to modify
+        request: JSON request body containing element values to set
+
+    Request body schema:
+    ```json
+    {
+        "elements": {
+            "element_name1": "value1",
+            "element_name2": "value2"
+        }
+    }
+    ```
+
+    Returns:
+        dict: Operation result with success status and details
+
+    Example request (setting exposure time):
+    ```json
+    {
+        "elements": {
+            "CCD_EXPOSURE_VALUE": 30.0
+        }
+    }
+    ```
+
+    Example request (connecting device):
+    ```json
+    {
+        "elements": {
+            "CONNECT": "On",
+            "DISCONNECT": "Off"
+        }
+    }
+    ```
+
+    Example success response:
+    ```json
+    {
+        "success": true,
+        "message": "Property set successfully",
+        "device": "CCD Simulator",
+        "property": "CCD_EXPOSURE",
+        "elements": {
+            "CCD_EXPOSURE_VALUE": 30.0
+        }
+    }
+    ```
+
+    Example error response:
+    ```json
+    {
+        "success": false,
+        "error": "Property is read-only",
+        "error_type": "permission_denied"
+    }
+    ```
+
+    Raises:
+        400: No element values provided or invalid values
+        404: Property or element not found
+        422: Property is read-only or validation failed
+        503: INDI client not connected to server
+    """
+    client = get_indi_client()
+    if not client.is_connected():
+        raise HTTPException(status_code=503, detail="INDI client not connected")
+
+    try:
+        data = await request.json()
+        elements = data.get('elements', {})
+
+        if not elements:
+            raise HTTPException(status_code=400, detail="No element values provided")
+
+        # Log the received values
+        logging.warning(f"Setting property {device_name}.{property_name} with values: {elements}")
+
+        # Set the property using the INDI client
+        result = client.set_property(device_name, property_name, elements)
+
+        if result['success']:
+            # Success - property setting command was sent
+            logging.info(f"Property {device_name}.{property_name} set successfully")
+            return JSONResponse(content={
+                "success": True,
+                "message": result['message'],
+                "device": device_name,
+                "property": property_name,
+                "elements": elements
+            })
+        else:
+            # Error occurred during property setting
+            error_msg = result['error']
+            error_type = result.get('error_type', 'unknown_error')
+
+            logging.error(f"Failed to set property {device_name}.{property_name}: {error_msg}")
+
+            # Map error types to appropriate HTTP status codes
+            if error_type in ['property_not_found', 'element_not_found']:
+                status_code = 404
+            elif error_type == 'permission_denied':
+                status_code = 403
+            elif error_type in ['invalid_value', 'unsupported_type']:
+                status_code = 400
+            elif error_type == 'communication_error':
+                status_code = 503
+            else:
+                status_code = 500
+
+            raise HTTPException(status_code=status_code, detail=error_msg)
+
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON in request body")
+    except HTTPException:
+        # Re-raise HTTP exceptions (these are our expected errors)
+        raise
+    except Exception as e:
+        logging.error(f"Unexpected error setting property {device_name}.{property_name}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+
+###############################################################################
+# WebSocket endpoints
+###############################################################################
+
+@app.websocket('/evt_device/{device_name}')
+async def evt_device_websocket(websocket: WebSocket, device_name: str):
+    """
+    WebSocket endpoint for real-time device property updates.
+
+    This endpoint provides a persistent connection for receiving real-time updates
+    from INDI devices. Events are pushed to clients as soon as properties change,
+    eliminating the need for polling.
+
+    Args:
+        websocket: The WebSocket connection
+        device_name: The exact name of the INDI device to monitor
+
+    Events sent to client:
+        - property_updated: When a property value changes
+        - property_defined: When a new property is created
+        - property_deleted: When a property is removed
+        - message: When the device sends a message
+
+    Example event:
+    ```json
+    {
+        "event": "property_updated",
+        "device": "CCD Simulator",
+        "data": {
+            "name": "CCD_TEMPERATURE",
+            "type": "number",
+            "state": "ok",
+            "elements": {...}
+        }
+    }
+    ```
+    """
+    manager = get_websocket_manager()
+    await manager.connect(websocket, device_name)
+
+    try:
+        # Keep the connection alive and listen for client messages
+        while True:
+            # Wait for any message from client (used for keepalive)
+            data = await websocket.receive_text()
+            # Echo back for keepalive confirmation
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        logging.info(f"WebSocket disconnected for device: {device_name}")
+    except Exception as e:
+        logging.error(f"WebSocket error for device {device_name}: {e}")
+    finally:
+        await manager.disconnect(websocket, device_name)
+
 
 ###############################################################################
 # System control endpoints

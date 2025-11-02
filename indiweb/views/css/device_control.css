@@ -1,0 +1,1075 @@
+/* Device Control Panel CSS */
+
+.property-group {
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+  background-color: #fafafa;
+}
+
+.property-group h4 {
+  margin-top: 0;
+  color: #555;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 5px;
+}
+
+.property-item {
+  margin-bottom: 15px;
+  padding: 12px;
+  border: 1px solid #e7e7e7;
+  border-radius: 3px;
+  background-color: white;
+  display: grid;
+  grid-template-columns: auto auto auto auto 1fr;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.property-header {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+}
+
+.property-label {
+  font-weight: bold;
+  margin-left: 8px;
+  color: #333;
+  white-space: nowrap;
+}
+
+.property-state {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  border: 1px solid #ccc;
+}
+
+.state-idle {
+  background-color: #d9d9d9;
+}
+
+.state-ok {
+  background-color: #5cb85c;
+}
+
+.state-busy {
+  background-color: #f0ad4e;
+}
+
+.state-alert {
+  background-color: #d9534f;
+}
+
+.property-elements {
+  display: contents;
+}
+
+.element-row {
+  display: contents;
+}
+
+.element-label {
+  grid-column: 2;
+  font-weight: normal;
+  color: #666;
+  white-space: nowrap;
+  text-align: right;
+  padding-right: 8px;
+}
+
+.element-value-container {
+  grid-column: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.set-button-container {
+  grid-column: 4;
+  grid-row: 1 / 1;
+  align-items: flex-start;
+}
+
+.element-input {
+  margin-right: 10px;
+  max-width: 150px;
+  margin-left: 5px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.property-buttons {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+/* Property control buttons */
+.copy-value-btn {
+  margin-left: 5px;
+  margin-right: 5px;
+  padding: 3px 8px;
+  font-size: 11px;
+  line-height: 1.2;
+  min-width: 32px;
+  vertical-align: middle;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: linear-gradient(to bottom, #fff 0%, #f0f0f0 100%);
+  color: #333 !important;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.copy-value-btn:hover {
+  background: linear-gradient(to bottom, #f8f8f8 0%, #e8e8e8 100%);
+  border-color: #aaa;
+  color: #333 !important;
+}
+
+.copy-value-btn:active {
+  background: linear-gradient(to bottom, #e8e8e8 0%, #f0f0f0 100%);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  color: #333 !important;
+}
+
+.property-set-control {
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.set-property-btn {
+  min-width: 60px;
+}
+
+/* Styling for current value display in writable properties */
+.element-current-value {
+  margin-right: 5px;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+/* Better layout for value + controls */
+.element-value-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+}
+
+.switch-group {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin: 5px 0;
+  justify-self: start;
+}
+
+.switch-group label {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+.light-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  border: 2px solid #ccc;
+  vertical-align: middle;
+}
+
+.connection-controls {
+  margin-bottom: 25px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.connection-controls .form-group {
+  margin-bottom: 0;
+}
+
+.connection-status-connected {
+  background-color: #5cb85c !important;
+  color: white;
+}
+
+.connection-status-disconnected {
+  background-color: #d9534f !important;
+  color: white;
+}
+
+.connection-status-busy {
+  background-color: #f0ad4e !important;
+  color: white;
+}
+
+.device-messages {
+  height: 200px;
+  overflow-y: auto;
+  background-color: #f8f8f8;
+  padding: 12px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.message-timestamp {
+  color: #999;
+  margin-right: 8px;
+}
+
+.message-device {
+  color: #0066cc;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.message-text {
+  color: #333;
+}
+
+.message-entry {
+  padding: 2px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.message-entry:last-child {
+  border-bottom: none;
+}
+
+.message-info {
+  background-color: #f8f9fa;
+}
+
+.message-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.message-warning {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.message-error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.message-source {
+  color: #0066cc;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.nav-tabs {
+  border-bottom: 2px solid #ddd;
+  margin-bottom: 0;
+}
+
+.nav-tabs > li > a {
+  border-radius: 4px 4px 0 0;
+  color: #555;
+}
+
+.nav-tabs > li.active > a {
+  background-color: #fff;
+  border-color: #ddd #ddd transparent;
+  border-width: 2px 1px 1px 1px;
+  color: #333;
+  font-weight: bold;
+}
+
+.tab-content {
+  padding: 20px 0;
+  background-color: white;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  border-radius: 0 0 4px 4px;
+  min-height: 400px;
+}
+
+.property-readonly {
+  background-color: #f5f5f5;
+  border-left: 4px solid #bbb;
+}
+
+/* Make text elements in read-only properties more grayish */
+.property-readonly .property-label {
+  color: #777;
+}
+
+.property-readonly .element-label {
+  color: #888;
+}
+
+.property-readonly .element-value {
+  background-color: #e9e9e9;
+  color: #666;
+  border-color: #d5d5d5;
+}
+
+/* Make light indicators in read-only properties more grayish */
+.property-readonly .light-indicator {
+  opacity: 0.7;
+}
+
+/* Make switch elements in read-only properties more grayish */
+.property-readonly .switch-element {
+  opacity: 0.8;
+}
+
+.property-readonly .switch-on {
+  background-color: #e0e7e0;
+  border-color: #c0c8c0;
+  color: #556755;
+}
+
+.property-readonly .switch-off {
+  background-color: #ebe5e5;
+  border-color: #d0c5c5;
+  color: #6b5555;
+}
+
+.property-writeonly {
+  border-left: 4px solid #428bca;
+}
+
+.property-readwrite {
+  border-left: 4px solid #5cb85c;
+}
+
+.btn-property {
+  font-size: 12px;
+  padding: 4px 12px;
+}
+
+/* Read-only property styling */
+.element-value {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  background-color: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #e9ecef;
+  display: inline-block;
+  min-width: 60px;
+}
+
+.switch-element {
+  margin-right: 15px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* Box styling for switch fallback strong elements */
+.switch-element strong {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  background-color: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #e9ecef;
+  display: inline-block;
+  min-width: 60px;
+  font-weight: normal;
+}
+
+.switch-on {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+.switch-off {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+/* Switch rule type styles */
+.switch-rule-info {
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+/* Radio button style switches (OneOfMany, AtMostOne) */
+.switch-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.switch-radio-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.switch-radio-item:hover {
+  background-color: #f8f9fa;
+}
+
+.switch-radio {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #007bff;
+  display: inline-block;
+  margin-right: 8px;
+  position: relative;
+  vertical-align: middle;
+}
+
+.switch-radio.radio-selected::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #007bff;
+}
+
+.switch-radio.radio-unselected {
+  background-color: transparent;
+}
+
+/* Checkbox style switches (AnyOfMany) */
+.switch-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.switch-checkbox-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.switch-checkbox-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* Horizontal checkbox style switches (AnyOfMany) */
+.switch-checkbox-group-horizontal {
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.switch-checkbox-item-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.switch-checkbox-item-horizontal:hover {
+  background-color: #f8f9fa;
+}
+
+.switch-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #007bff;
+  border-radius: 3px;
+  display: inline-block;
+  margin-right: 8px;
+  position: relative;
+  vertical-align: middle;
+}
+
+.switch-checkbox.checkbox-checked {
+  background-color: #007bff;
+}
+
+.switch-checkbox.checkbox-checked::before {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.switch-checkbox.checkbox-unchecked {
+  background-color: transparent;
+}
+
+/* Optional button groups (AtMostOne) styling */
+.switch-optional .switch-button.button-active {
+  background-color: #6c757d;
+  border-color: #545b62;
+}
+
+.switch-optional .switch-button.button-active:hover {
+  background-color: #545b62;
+}
+
+/* Switch status indicators */
+.switch-status {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 3px;
+  min-width: 30px;
+  text-align: center;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  display: inline-block;
+}
+
+.switch-status.status-on {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.switch-status.status-off {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Switch control grouping */
+.switch-control {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.switch-control .element-label {
+  margin-left: 0;
+  margin-right: 8px;
+}
+
+/* Button group style switches (OneOfMany) */
+.switch-button-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 5px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.switch-button {
+  padding: 8px 16px;
+  border: none;
+  border-right: 1px solid #ddd;
+  background-color: #ffffff;
+  color: #495057;
+  font-size: 14px;
+  font-weight: normal;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: auto;
+}
+
+.switch-button:hover {
+  background-color: #e9ecef;
+}
+
+.switch-button.button-active {
+  background-color: #28a745;
+  color: white;
+  font-weight: bold;
+  border: 1px solid #1e7e34;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+  transform: translateY(1px);
+}
+
+.switch-button.button-active:hover {
+  background-color: #218838;
+}
+
+.switch-button.button-inactive {
+  background-color: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transform: translateY(0px);
+}
+
+/* Blue clicked state for switch buttons */
+.switch-button.button-clicked {
+  background-color: #007bff !important;
+  color: white !important;
+  border-color: #0056b3 !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+  transform: translateY(1px);
+}
+
+.switch-button:first-child {
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+
+.switch-button:last-child {
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+  border-right: none;
+}
+
+
+/* Rule type specific styling */
+
+
+
+/* Enhanced visual feedback */
+.switch-radio-item.selected,
+.switch-checkbox-item.selected {
+  background-color: #e7f3ff;
+  border: 1px solid #b3d9ff;
+}
+
+/* Disabled state for read-only properties */
+.property-readonly .switch-radio,
+.property-readonly .switch-checkbox,
+.property-readonly .switch-button {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.property-readonly .switch-radio-item,
+.property-readonly .switch-checkbox-item {
+  cursor: not-allowed;
+}
+
+.property-readonly .switch-radio-item:hover,
+.property-readonly .switch-checkbox-item:hover {
+  background-color: transparent;
+}
+
+.property-readonly .switch-button:hover {
+  background-color: inherit !important;
+}
+
+/* Dark gray styling for read-only button switches */
+.property-readonly .switch-button.button-active {
+  background-color: #6c757d !important;
+  color: #f8f9fa !important;
+  border-color: #495057 !important;
+}
+
+.property-readonly .switch-button.button-inactive {
+  background-color: #e9ecef !important;
+  color: #6c757d !important;
+  border-color: #adb5bd !important;
+}
+
+/* More grayish styling for read-only checkbox switches */
+.property-readonly .switch-checkbox.checkbox-checked {
+  background-color: #999 !important;
+  border-color: #777 !important;
+}
+
+.property-readonly .switch-checkbox.checkbox-unchecked {
+  border-color: #ccc !important;
+}
+
+.property-readonly .switch-status.status-on {
+  background-color: #e0e7e0 !important;
+  color: #556755 !important;
+  border-color: #c0c8c0 !important;
+}
+
+.property-readonly .switch-status.status-off {
+  background-color: #ebe5e5 !important;
+  color: #6b5555 !important;
+  border-color: #d0c5c5 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .property-item {
+    grid-template-columns: auto 1fr auto;
+    gap: 4px 8px;
+    padding: 8px;
+    margin-bottom: 10px;
+  }
+
+  .property-header {
+    grid-column: 1 / -1;
+    margin-bottom: 6px;
+  }
+
+  .element-label {
+    grid-column: 1;
+    text-align: left;
+    padding-right: 6px;
+    font-weight: normal;
+    font-size: 12px;
+    min-width: 80px;
+  }
+
+  .element-value-container {
+    grid-column: 2;
+    margin-bottom: 0;
+  }
+
+  .set-button-container {
+    grid-column: 2;
+    grid-row: -1 / -1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding-bottom: 0;
+  }
+
+  .switch-group {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 4px 0;
+    justify-self: start;
+  }
+
+  .element-input {
+    max-width: 150px;
+    width: 150px;
+  }
+
+  .switch-radio-group,
+  .switch-checkbox-group {
+    gap: 6px;
+  }
+
+  .switch-radio-item,
+  .switch-checkbox-item {
+    padding: 4px 6px;
+  }
+
+  .switch-button-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    width: auto;
+  }
+
+  .switch-button {
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 3px !important;
+    border-right: 1px solid #ddd !important;
+    margin: 1px;
+  }
+
+  .switch-button:last-child {
+    border-right: none !important;
+  }
+}
+
+/* Loading animation */
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.spinner {
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Disconnected state styling */
+body.disconnected .set-property-btn,
+body.disconnected .copy-value-btn,
+body.disconnected .switch-button,
+body.disconnected .switch-checkbox,
+body.disconnected .element-input {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+body.disconnected .property-item {
+  background-color: #f5f5f5 !important;
+  border-color: #ddd !important;
+}
+
+body.disconnected .property-readwrite,
+body.disconnected .property-writeonly {
+  border-left-color: #999 !important;
+}
+
+body.disconnected .switch-button.button-active {
+  background-color: #999 !important;
+  border-color: #777 !important;
+  color: #ddd !important;
+}
+
+body.disconnected .switch-button.button-inactive {
+  background-color: #f0f0f0 !important;
+  border-color: #ccc !important;
+  color: #999 !important;
+}
+
+body.disconnected .switch-checkbox.checkbox-checked {
+  background-color: #999 !important;
+  border-color: #777 !important;
+}
+
+body.disconnected .switch-checkbox.checkbox-unchecked {
+  border-color: #ccc !important;
+}
+
+body.disconnected::before {
+  content: "⚠ DISCONNECTED - Controls Disabled";
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: #d9534f;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  z-index: 1000;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* Legend section styling */
+.legend-section {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+}
+
+.legend-section h5 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #495057;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.legend-horizontal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.legend-item span {
+  margin-right: 6px;
+}
+
+.legend-border {
+  width: 20px;
+  height: 12px;
+  border-radius: 2px;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.property-readonly-border {
+  background-color: #f5f5f5;
+  border-left: 4px solid #bbb;
+}
+
+.property-readwrite-border {
+  background-color: #ffffff;
+  border-left: 4px solid #5cb85c;
+}
+
+.property-writeonly-border {
+  background-color: #ffffff;
+  border-left: 4px solid #428bca;
+}
+
+/* Switch info icon styling */
+.switch-info-icon {
+  display: inline-block;
+  margin-left: 8px;
+  cursor: help;
+  color: #5bc0de;
+  font-size: 16px;
+  font-weight: bold;
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+.switch-info-icon:hover {
+  color: #31b0d5;
+  text-shadow: 0 0 3px rgba(91, 192, 222, 0.5);
+}
+
+/* Custom tooltip */
+.switch-info-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  z-index: 1000;
+  background-color: #fff;
+  color: #000;
+  text-align: left;
+  border-radius: 4px;
+  padding: 10px 12px;
+  left: 100%;
+  margin-left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid #ccc;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  font-size: 13px;
+  font-weight: normal;
+}
+
+.switch-info-tooltip::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  margin-top: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent #fff transparent transparent;
+}
+
+.switch-info-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  margin-top: -6px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent #ccc transparent transparent;
+  z-index: -1;
+}
+
+.switch-info-icon:hover .switch-info-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+.switch-tooltip-title {
+  font-weight: bold;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 4px;
+  color: #333;
+}
+
+.switch-tooltip-item {
+  padding: 2px 0;
+  line-height: 1.4;
+  color: #000;
+}
+
+/* Property type indicators */
+.property-type-text::before {
+  content: "T";
+  background-color: #5bc0de;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.property-type-number::before {
+  content: "#";
+  background-color: #f0ad4e;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.property-type-switch::before {
+  content: "S";
+  background-color: #5cb85c;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.property-type-light::before {
+  content: "L";
+  background-color: #d9534f;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 8px;
+}
