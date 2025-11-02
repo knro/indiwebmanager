@@ -164,11 +164,12 @@
 }
 
 .switch-group {
-  grid-column: 2 / -1;
+  grid-column: 2;
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
   margin: 5px 0;
+  justify-self: start;
 }
 
 .switch-group label {
@@ -756,6 +757,7 @@
     flex-wrap: wrap;
     gap: 8px;
     margin: 4px 0;
+    justify-self: start;
   }
 
   .element-input {
