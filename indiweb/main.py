@@ -10,7 +10,7 @@ import subprocess
 import platform
 from importlib_metadata import version
 
-from fastapi import FastAPI, Request, Response, HTTPException
+from fastapi import FastAPI, Request, Response, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -21,6 +21,7 @@ from .driver import DeviceDriver, DriverCollection, INDI_DATA_DIR
 from .database import Database
 from .device import Device
 from .indi_client import get_indi_client, start_indi_client, stop_indi_client
+from .evt_indi_client import get_websocket_manager, create_indi_event_listener
 
 # default settings
 WEB_HOST = '0.0.0.0'
@@ -95,6 +96,7 @@ app.mount("/static", StaticFiles(directory=views_path), name="static")
 
 saved_profile = None
 active_profile = ""
+evt_listener_initialized = False
 
 
 def start_profile(profile):
@@ -375,6 +377,7 @@ async def start_server(profile: str, response: Response):
     saved_profile = profile
     global active_profile
     active_profile = profile
+    global evt_listener_initialized
     response.set_cookie(key="indiserver_profile", value=profile, max_age=3600000, path='/')
     start_profile(profile)
 
@@ -385,6 +388,15 @@ async def start_server(profile: str, response: Response):
         profile_info = db.get_profile(profile)
         port = profile_info.get('port', 7624) if profile_info else 7624
         start_indi_client('localhost', port)
+
+        # Initialize event listener for WebSocket updates
+        global evt_listener_initialized
+        if not evt_listener_initialized:
+            indi_client = get_indi_client()
+            event_loop = asyncio.get_event_loop()
+            create_indi_event_listener(indi_client, event_loop)
+            evt_listener_initialized = True
+            logging.info("INDI event listener initialized for WebSocket updates")
 
     asyncio.create_task(start_client())
 
@@ -666,6 +678,7 @@ async def get_device_structure(device_name: str):
         404: Device not found or not available
         503: INDI server not running or client not connected
     """
+    global evt_listener_initialized
     client = get_indi_client()
     if not client.is_connected():
         # Try to connect to INDI server
@@ -679,6 +692,14 @@ async def get_device_structure(device_name: str):
 
             if not start_indi_client('localhost', port):
                 raise HTTPException(status_code=503, detail="Cannot connect to INDI server")
+
+            # Initialize event listener for WebSocket updates if not already done
+            if not evt_listener_initialized:
+                import asyncio
+                event_loop = asyncio.get_event_loop()
+                create_indi_event_listener(client, event_loop)
+                evt_listener_initialized = True
+                logging.info("INDI event listener initialized for WebSocket updates (via structure endpoint)")
         else:
             raise HTTPException(status_code=503, detail="INDI server is not running")
 
@@ -1061,6 +1082,62 @@ async def set_device_property(device_name: str, property_name: str, request: Req
         logging.error(f"Unexpected error setting property {device_name}.{property_name}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+
+
+###############################################################################
+# WebSocket endpoints
+###############################################################################
+
+@app.websocket('/evt_device/{device_name}')
+async def evt_device_websocket(websocket: WebSocket, device_name: str):
+    """
+    WebSocket endpoint for real-time device property updates.
+
+    This endpoint provides a persistent connection for receiving real-time updates
+    from INDI devices. Events are pushed to clients as soon as properties change,
+    eliminating the need for polling.
+
+    Args:
+        websocket: The WebSocket connection
+        device_name: The exact name of the INDI device to monitor
+
+    Events sent to client:
+        - property_updated: When a property value changes
+        - property_defined: When a new property is created
+        - property_deleted: When a property is removed
+        - message: When the device sends a message
+
+    Example event:
+    ```json
+    {
+        "event": "property_updated",
+        "device": "CCD Simulator",
+        "data": {
+            "name": "CCD_TEMPERATURE",
+            "type": "number",
+            "state": "ok",
+            "elements": {...}
+        }
+    }
+    ```
+    """
+    manager = get_websocket_manager()
+    await manager.connect(websocket, device_name)
+
+    try:
+        # Keep the connection alive and listen for client messages
+        while True:
+            # Wait for any message from client (used for keepalive)
+            data = await websocket.receive_text()
+            # Echo back for keepalive confirmation
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        logging.info(f"WebSocket disconnected for device: {device_name}")
+    except Exception as e:
+        logging.error(f"WebSocket error for device {device_name}: {e}")
+    finally:
+        await manager.disconnect(websocket, device_name)
 
 
 ###############################################################################

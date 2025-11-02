@@ -23,7 +23,7 @@
               <div class="form-group">
                 <label>Device Status:</label>
                 <span id="device_status" class="label label-info">Loading...</span>
-                <small class="text-muted" style="margin-left: 10px;">Properties update automatically</small>
+                <small class="text-muted" style="margin-left: 10px;">Real-time updates via WebSocket</small>
               </div>
             </div>
           </div>
@@ -109,25 +109,26 @@
     var deviceName = "{{device_name}}";
     var deviceStructure = {};
     var lastUpdateTime = Date.now();
-    var lastPollTime = Date.now() / 1000; // Track last poll timestamp in seconds
     var messageLog = [];
     var maxMessages = 100;
-    var isConnected = true; // Track connection state
+    var isConnected = false; // Track connection state
     var reconnectAttempts = 0;
     var maxReconnectAttempts = 10;
     var reconnectTimeout = null;
+    var websocket = null;
+    var keepaliveInterval = null;
 
     $(document).ready(function() {
       loadDeviceStructure();
-
-      // Start polling for changes every 1 second
-      setInterval(checkForUpdates, 1000);
 
       // Initialize message log
       addMessage("info", "Device control panel loaded", "System");
 
       // Set up event handlers for copy and set buttons
       setupPropertyControls();
+
+      // Connect to WebSocket for real-time updates
+      connectWebSocket();
     });
 
     function loadDeviceStructure() {
@@ -151,31 +152,108 @@
       });
     }
 
-    function checkForUpdates() {
-      var currentTime = Date.now() / 1000;
-      var pollUrl = "/api/devices/" + encodeURIComponent(deviceName) + "/poll?since=" + lastPollTime;
+    function connectWebSocket() {
+      // Close existing connection if any
+      if (websocket) {
+        websocket.close();
+        websocket = null;
+      }
 
-      $.getJSON(pollUrl, function(dirtyProps) {
-        lastPollTime = currentTime; // Update poll timestamp
+      // Clear existing keepalive
+      if (keepaliveInterval) {
+        clearInterval(keepaliveInterval);
+        keepaliveInterval = null;
+      }
 
-        // Connection is working - ensure we're in connected state
-        if (!isConnected) {
+      // Determine WebSocket protocol (ws:// or wss://)
+      var wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      var wsUrl = wsProtocol + '//' + window.location.host + '/evt_device/' + encodeURIComponent(deviceName);
+
+      addMessage("info", "Connecting to WebSocket: " + wsUrl, "System");
+
+      try {
+        websocket = new WebSocket(wsUrl);
+
+        websocket.onopen = function(event) {
+          console.log('WebSocket connected:', event);
+          addMessage("success", "WebSocket connected - receiving real-time updates", "System");
           setConnectionState(true);
-        }
 
-        if (dirtyProps && dirtyProps.length > 0) {
-          console.log('Dirty properties:', dirtyProps);
-          fetchUpdatedProperties(dirtyProps);
-        }
-      }).fail(function(xhr, status, error) {
-        console.error('Failed to check for updates:', error);
-        addMessage("warning", "Connection check failed: " + error, "System");
+          // Start keepalive ping every 30 seconds
+          keepaliveInterval = setInterval(function() {
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+              websocket.send("ping");
+            }
+          }, 30000);
+        };
 
-        // Set disconnected state
+        websocket.onmessage = function(event) {
+          console.log('WebSocket message received:', event.data);
+
+          // Handle pong response
+          if (event.data === "pong") {
+            return;
+          }
+
+          try {
+            var message = JSON.parse(event.data);
+            handleWebSocketEvent(message);
+          } catch (e) {
+            console.error('Failed to parse WebSocket message:', e);
+            addMessage("error", "Failed to parse WebSocket message: " + e, "System");
+          }
+        };
+
+        websocket.onerror = function(error) {
+          console.error('WebSocket error:', error);
+          addMessage("error", "WebSocket error occurred", "System");
+        };
+
+        websocket.onclose = function(event) {
+          console.log('WebSocket closed:', event);
+          addMessage("warning", "WebSocket connection closed", "System");
+          setConnectionState(false);
+
+          // Clear keepalive
+          if (keepaliveInterval) {
+            clearInterval(keepaliveInterval);
+            keepaliveInterval = null;
+          }
+        };
+      } catch (e) {
+        console.error('Failed to create WebSocket:', e);
+        addMessage("error", "Failed to create WebSocket: " + e, "System");
         setConnectionState(false);
+      }
+    }
 
-        // The automatic reconnection will be handled by setConnectionState(false)
-      });
+    function handleWebSocketEvent(message) {
+      var eventType = message.event;
+      var deviceName = message.device;
+      var data = message.data;
+
+      console.log('Handling event:', eventType, 'for device:', deviceName, 'data:', data);
+
+      if (eventType === 'property_updated' || eventType === 'property_defined') {
+        // Update the property in the UI
+        var propName = data.name;
+        var updatedProps = {};
+        updatedProps[propName] = data;
+        updateProperties(updatedProps);
+      } else if (eventType === 'property_deleted') {
+        // Handle property deletion (reload structure)
+        addMessage("info", "Property deleted: " + data.name, deviceName);
+        setTimeout(function() {
+          loadDeviceStructure();
+        }, 500);
+      } else if (eventType === 'message') {
+        // Handle device messages
+        addMessage("info", data.message, deviceName);
+      } else if (eventType === 'device_added') {
+        addMessage("success", "Device added: " + deviceName, "System");
+      } else if (eventType === 'device_deleted') {
+        addMessage("warning", "Device removed: " + deviceName, "System");
+      }
     }
 
     function setConnectionState(connected) {
@@ -195,8 +273,8 @@
 
         $("#device_status").removeClass("label-warning label-danger")
                           .addClass("label-success")
-                          .text("Connected - Auto-updating");
-        addMessage("success", "Connection restored", "System");
+                          .text("Connected - Real-time updates");
+        addMessage("success", "WebSocket connection restored", "System");
       } else {
         // Add disconnected styling and disable all interactive controls
         $('body').addClass('disconnected');
@@ -226,30 +304,13 @@
                         .addClass("label-warning")
                         .text("Reconnecting... (attempt " + reconnectAttempts + "/" + maxReconnectAttempts + ")");
 
-      addMessage("info", "Attempting reconnection #" + reconnectAttempts + " in " + (retryDelay/1000) + " seconds...", "System");
+      addMessage("info", "Attempting WebSocket reconnection #" + reconnectAttempts + " in " + (retryDelay/1000) + " seconds...", "System");
 
       reconnectTimeout = setTimeout(function() {
-        loadDeviceStructure();
+        connectWebSocket();
       }, retryDelay);
     }
 
-    function fetchUpdatedProperties(propertyNames) {
-      $.ajax({
-        type: 'POST',
-        url: '/api/devices/' + encodeURIComponent(deviceName) + '/properties/batch',
-        data: JSON.stringify({ properties: propertyNames }),
-        contentType: 'application/json',
-        success: function(updatedProps) {
-          console.log('Updated properties:', updatedProps);
-          updateProperties(updatedProps);
-          addMessage("info", "Updated " + Object.keys(updatedProps).length + " properties", "System");
-        },
-        error: function(xhr, status, error) {
-          console.error('Failed to fetch updated properties:', error);
-          addMessage("error", "Failed to fetch property updates: " + error, "System");
-        }
-      });
-    }
 
     function buildPropertyDisplay() {
       // Remember currently active tab
