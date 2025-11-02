@@ -606,16 +606,21 @@
             }
           }
 
-          // Use text input for %m formatted fields to avoid spin controls
-          var inputType = (elem.format && elem.format.includes('%m')) ? 'text' : 'number';
+          // Use text input for sexagesimal formatted fields to avoid spin controls
+          // Check for INDI sexagesimal format: %w.fm (where f is precision, m is literal 'm')
+          var isSexagesimal = (elem.format && /%.+\..*m$/.test(elem.format)) || 
+                             (elem.formatted_value && elem.formatted_value.includes(':'));
+          var inputType = isSexagesimal ? 'text' : 'number';
           html += '<input type="' + inputType + '" class="form-control input-sm element-input" ';
           html += 'data-property="' + prop.name + '" data-element="' + elemName + '" ';
           if (inputType === 'number') {
             if (elem.min !== undefined) html += 'min="' + elem.min + '" ';
             if (elem.max !== undefined) html += 'max="' + elem.max + '" ';
             if (elem.step !== undefined) html += 'step="' + elem.step + '" ';
+            html += 'placeholder="Enter value">';
+          } else {
+            html += 'placeholder="Enter sexagesimal value (e.g., 12:34:56.78)">';
           }
-          html += 'placeholder="Enter value">';
         } else {
           // Read-only property: just the value
           html += '<span class="element-value" data-property="' + prop.name + '" data-element="' + elemName + '">';
@@ -823,12 +828,21 @@
         var inputField = $('.element-input[data-property="' + propName + '"][data-element="' + elemName + '"]');
 
         var currentValue = currentValueSpan.text().trim();
-        // Extract numeric value from formatted display if needed
-        var numericValue = parseFloat(currentValue);
-        if (!isNaN(numericValue)) {
-          inputField.val(numericValue);
-        } else {
+        
+        // Check if the target input field is a text field (likely sexagesimal)
+        var isTextInput = inputField.attr('type') === 'text';
+        
+        if (isTextInput) {
+          // For text inputs (sexagesimal), copy the full formatted value
           inputField.val(currentValue);
+        } else {
+          // For number inputs, extract numeric value from formatted display if needed
+          var numericValue = parseFloat(currentValue);
+          if (!isNaN(numericValue)) {
+            inputField.val(numericValue);
+          } else {
+            inputField.val(currentValue);
+          }
         }
 
         inputField.focus().select();
