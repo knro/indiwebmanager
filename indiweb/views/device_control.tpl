@@ -499,6 +499,32 @@
           typeInfo += ' (' + prop.rule + ')';
         }
         html += '<small class="text-muted">(' + prop.name + ') - ' + typeInfo + '</small>';
+        
+        // Add switch rule info icon for switch properties
+        if (prop.type === 'switch') {
+          html += '<span class="switch-info-icon" title="Switch Rule Information">';
+          html += 'ⓘ';
+          html += '<div class="switch-info-tooltip">';
+          html += '<div class="switch-tooltip-title">Switch Rule: ' + (prop.rule || 'OneOfMany') + '</div>';
+          if (prop.rule === 'OneOfMany') {
+            html += '<div class="switch-tooltip-item">• Exactly one option must be selected</div>';
+            html += '<div class="switch-tooltip-item">• Selecting one deselects others</div>';
+          } else if (prop.rule === 'AtMostOne') {
+            html += '<div class="switch-tooltip-item">• At most one option can be selected</div>';
+            html += '<div class="switch-tooltip-item">• All options can be off</div>';
+          } else if (prop.rule === 'AnyOfMany') {
+            html += '<div class="switch-tooltip-item">• Multiple options can be selected</div>';
+            html += '<div class="switch-tooltip-item">• Independent checkboxes</div>';
+          }
+          // Show element IDs for each switch
+          html += '<div class="switch-tooltip-item">Element IDs:</div>';
+          for (var elemName in prop.elements) {
+            var elem = prop.elements[elemName];
+            html += '<div class="switch-tooltip-item">  • ' + elemName + ' ("' + (elem.label || elemName) + '")</div>';
+          }
+          html += '</div>';
+          html += '</span>';
+        }
       }
 
       html += '</div>';
