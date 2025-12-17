@@ -157,22 +157,8 @@ function loadCurrentProfileDrivers()
 
     $.getJSON(url, function (data)
     {
-        if (data && data.length > 0)
+        if (data && data.drivers !== undefined)
         {
-            // Handle array of remote drivers
-            var remoteDrivers = [];
-            for (var i = 0; i < data.length; i++)
-            {
-                if (data[i].drivers)
-                {
-                    remoteDrivers.push(data[i].drivers);
-                }
-            }
-            $("#remote_drivers").val(remoteDrivers.join(","));
-        }
-        else if (data && data.drivers !== undefined)
-        {
-            // Handle single remote driver
             $("#remote_drivers").val(data.drivers);
         }
         else

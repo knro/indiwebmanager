@@ -140,26 +140,19 @@ def start_profile(profile):
     # Find if we have any remote drivers
     remote_drivers = db.get_profile_remote_drivers(profile)
     if remote_drivers:
-        # Handle both single dictionary and list of dictionaries
-        if isinstance(remote_drivers, list):
-            for remote_driver in remote_drivers:
-                driver = remote_driver['drivers']
-                one_driver = DeviceDriver(driver, driver, "1.0", driver, "Remote", None, False, None)
+        for remote_driver in remote_drivers:
+            driver = remote_driver['drivers']
+            one_driver = DeviceDriver(driver, driver, "1.0", driver, "Remote", None, False, None)
 
-                # Apply rules to remote drivers if any
-                if profile_scripts:
-                    for rule in profile_scripts:
-                        driver_label = rule.get('Driver')
-                        if driver_label and driver_label == driver:
-                            one_driver.rule = rule
-                logging.info("Adding remote driver: " + driver)
-                all_drivers.append(one_driver)
-        else:
-            # Handle the case where remote_drivers is a single dictionary
-            drivers = remote_drivers['drivers'].split(',')
-            for drv in drivers:
-                logging.warning("LOADING REMOTE DRIVER drv is {}".format(drv))
-                all_drivers.append(DeviceDriver(drv, drv, "1.0", drv, "Remote", None, False, None))
+            # Apply rules to remote drivers if any
+            if profile_scripts:
+                for rule in profile_scripts:
+                    driver_label = rule.get('Driver')
+                    if driver_label and driver_label == driver:
+                        one_driver.rule = rule
+            
+            logging.info("Adding remote driver: " + driver)
+            all_drivers.append(one_driver)
 
     # Sort drivers - those with .rule first, then remote drivers (family="Remote"), then others
     all_drivers = sorted(all_drivers,
@@ -324,12 +317,12 @@ async def get_remote_drivers(item: str):
         item (str): The name of the profile.
 
     Returns:
-        str: A JSON string representing the remote drivers.
+        str: A JSON string representing the remote drivers, or an empty JSON object if none.
     """
     results = db.get_profile_remote_drivers(item)
-    if results is None:
-        results = {}
-    return JSONResponse(content=results)
+    if results and isinstance(results, list) and len(results) > 0:
+        return JSONResponse(content=results[0])
+    return JSONResponse(content={})
 
 
 ###############################################################################
