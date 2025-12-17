@@ -86,7 +86,7 @@ db = Database(db_path)
 
 collection.parse_custom_drivers(db.get_custom_drivers())
 
-app = FastAPI(title="INDI Web Manager", version="1.0.0")
+app = FastAPI(title="INDI Web Manager", version="1.1.0")
 
 # Serve static files
 app.mount("/static", StaticFiles(directory=views_path), name="static")
