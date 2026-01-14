@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from .indi_server import IndiServer, INDI_PORT, INDI_FIFO, INDI_CONFIG_DIR
@@ -24,6 +25,7 @@ from .device import Device
 # default settings
 WEB_HOST = '0.0.0.0'
 WEB_PORT = 8624
+WEB_CORS = ["http://localhost", "http://127.0.0.1"]
 
 pkg_path, _ = os.path.split(os.path.abspath(__file__))
 views_path = os.path.join(pkg_path, 'views')
@@ -41,6 +43,9 @@ parser.add_argument('--port', '-P', type=int, default=WEB_PORT,
 parser.add_argument('--host', '-H', default=WEB_HOST,
                     help='Bind web server to this interface (default: %s)' %
                     WEB_HOST)
+parser.add_argument('--cors', '-C', default=WEB_CORS,
+                    help='Allowed domain for cross-origin policy (default: %s)' %
+                    WEB_CORS)
 parser.add_argument('--fifo', '-f', default=INDI_FIFO,
                     help='indiserver FIFO path (default: %s)' % INDI_FIFO)
 parser.add_argument('--conf', '-c', default=INDI_CONFIG_DIR,
@@ -87,6 +92,14 @@ db = Database(db_path)
 collection.parse_custom_drivers(db.get_custom_drivers())
 
 app = FastAPI(title="INDI Web Manager", version="1.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=args.cors,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
 
 # Serve static files
 app.mount("/static", StaticFiles(directory=views_path), name="static")
