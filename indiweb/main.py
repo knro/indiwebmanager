@@ -43,7 +43,7 @@ parser.add_argument('--port', '-P', type=int, default=WEB_PORT,
 parser.add_argument('--host', '-H', default=WEB_HOST,
                     help='Bind web server to this interface (default: %s)' %
                     WEB_HOST)
-parser.add_argument('--cors', '-C', default=WEB_CORS,
+parser.add_argument('--cors', '-C', default=list(WEB_CORS), nargs='+',
                     help='Allowed domain for cross-origin policy (default: %s)' %
                     WEB_CORS)
 parser.add_argument('--fifo', '-f', default=INDI_FIFO,
@@ -62,6 +62,14 @@ parser.add_argument('--sudo', '-S', action='store_true',
 
 args = parser.parse_args()
 
+# Add origins with current port if they don't exist
+extra_origins = []
+for origin in args.cors:
+    if ":" not in origin.replace("http://", "").replace("https://", ""):
+        port_origin = f"{origin}:{args.port}"
+        if port_origin not in args.cors:
+            extra_origins.append(port_origin)
+args.cors.extend(extra_origins)
 
 logging_level = logging.WARNING
 
