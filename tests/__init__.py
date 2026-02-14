@@ -1,0 +1,1 @@
+"""indiwebmanager test suite."""

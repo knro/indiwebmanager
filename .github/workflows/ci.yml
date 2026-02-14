@@ -36,5 +36,34 @@ jobs:
       - name: Install package
         run: pip install .
 
+      - name: Unit and API tests
+        run: pytest tests/ -m "not integration" -v
+
       - name: Smoke test
         run: indi-web --help
+
+  ci-integration:
+    if: github.event.review.state == 'approved'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install INDI (indiserver + simulator drivers)
+        run: |
+          sudo apt-add-repository -y ppa:mutlaqja/ppa
+          sudo apt-get update
+          sudo apt-get install -y indi-bin
+
+      - name: Install package with dev dependencies
+        run: pip install .[dev]
+
+      - name: Integration tests
+        run: pytest tests/ -m integration -v

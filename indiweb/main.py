@@ -222,9 +222,9 @@ def _register_routes(app):
         profiles = state.db.get_profiles()
         logging.debug(f"Profiles retrieved from DB: {profiles}")
         return state.templates.TemplateResponse(
+            request,
             "form.tpl",
-            {"request": request,
-             "profiles": profiles,
+            {"profiles": profiles,
              "drivers": drivers,
              "saved_profile": state.saved_profile,
              "hostname": state.hostname,

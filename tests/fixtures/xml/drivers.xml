@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<indilist>
+  <devGroup group="CCDs">
+    <device label="CCD Simulator">
+      <driver name="CCD Simulator">indi_simulator_ccd</driver>
+      <version>1.0</version>
+    </device>
+  </devGroup>
+  <devGroup group="Telescopes">
+    <device label="Telescope Simulator">
+      <driver name="Telescope Simulator">indi_simulator_telescope</driver>
+      <version>1.0</version>
+    </device>
+  </devGroup>
+  <devGroup group="Focusers">
+    <device label="Focuser Simulator">
+      <driver name="Focuser Simulator">indi_simulator_focus</driver>
+      <version>1.0</version>
+    </device>
+  </devGroup>
+</indilist>

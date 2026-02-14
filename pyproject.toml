@@ -55,6 +55,10 @@ dev = [
   "ruff>=0.4.0",
   "mypy>=1.8.0",
   "pre-commit>=3.6.0",
+  "pytest>=7.0",
+  "pytest-cov>=4.0",
+  "httpx>=0.25",
+  "tox>=4.0",
 ]
 
 [tool.ruff]
@@ -71,3 +75,9 @@ warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
 disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests requiring indiserver (deselect with '-m \"not integration\"')",
+]
+testpaths = ["tests"]
