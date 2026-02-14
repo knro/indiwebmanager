@@ -5,12 +5,10 @@ import sys
 
 sys.argv += ['-v', '--server', 'apache', '-l', '/tmp/wsgi.log']
 
-# Import the FastAPI app from main.py
-from indiweb.main import app
+# Create the FastAPI app. sys.argv was augmented above with apache/wsgi options.
+from a2wsgi import ASGIMiddleware
 
-# FastAPI is an ASGI application, but Apache mod_wsgi expects WSGI
-# Use asgiref's WsgiToAsgi adapter to bridge ASGI to WSGI
-from asgiref.wsgi import WsgiToAsgi
+from indiweb.main import create_app
 
-# Wrap the FastAPI (ASGI) app for WSGI compatibility
-application = WsgiToAsgi(app)
+app = create_app()
+application = ASGIMiddleware(app)

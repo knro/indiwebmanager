@@ -1,7 +1,8 @@
-import os
 import errno
-import sqlite3
 import logging
+import os
+import sqlite3
+
 from . import __version__
 
 
@@ -78,7 +79,7 @@ class Database(object):
             pass
 
         try:
-            c.execute('UPDATE Version SET version=?', __version__)
+            c.execute('UPDATE Version SET version=?', (__version__,))
         except sqlite3.Error:
             pass
 

@@ -1,12 +1,12 @@
 #!/usr/bin/python
 import logging
 import os
-from subprocess import call, check_output
-import threading
 import queue
+import threading
+from subprocess import call, check_output
 
 # Local imports
-from .AsyncSystemCommand import AsyncSystemCommand
+from .async_system_command import AsyncSystemCommand
 
 INDI_PORT = 7624
 INDI_FIFO = '/tmp/indiFIFO'
@@ -60,7 +60,7 @@ class IndiServer(object):
                 # Log any other exceptions during driver start
                 logging.error(f"Error starting driver {driver.label if 'driver' in locals() else 'unknown'} in worker thread: {e}")
                 # Optionally, mark task as done even on error to prevent blocking join() if used later
-                # driver_queue.task_done() 
+                # driver_queue.task_done()
                 # Decide if one driver error should stop others, currently it continues
                 continue
         logging.info("Driver starter worker thread finished.")
@@ -235,7 +235,7 @@ class IndiServer(object):
 
         del self.__running_drivers[driver.label]
 
-    def start(self, port=INDI_PORT, drivers=[]):
+    def start(self, port=INDI_PORT, drivers=None):
         """
         Starts the INDI server and optionally starts a list of drivers.
 
@@ -251,6 +251,7 @@ class IndiServer(object):
         # Reset running drivers list immediately
         self.__running_drivers = {}
 
+        drivers = drivers or []
         if drivers:
             driver_queue = queue.Queue()
             for driver in drivers:
@@ -266,6 +267,16 @@ class IndiServer(object):
             self.__driver_starter_thread.start()
         else:
             logging.info("No drivers specified to start.")
+
+    def wait_for_drivers_started(self, timeout=5):
+        """
+        Blocks until the driver starter thread has finished or the timeout is reached.
+
+        Args:
+            timeout (float): Maximum seconds to wait. Defaults to 5.
+        """
+        if self.__driver_starter_thread and self.__driver_starter_thread.is_alive():
+            self.__driver_starter_thread.join(timeout=timeout)
 
 
     def stop(self, port=None):
@@ -285,7 +296,7 @@ class IndiServer(object):
         # If port is not specified, use the port from the last start command
         if port is None:
             port = getattr(self, '_IndiServer__port', INDI_PORT)
-            
+
         # Try to find and kill the indiserver process running on the specified port
         try:
             import psutil
@@ -310,15 +321,15 @@ class IndiServer(object):
             if ret == 0:
                 logging.info('indiserver terminated successfully')
             else:
-                logging.warn('terminating indiserver failed code ' + str(ret))
-        
+                logging.warning('terminating indiserver failed code ' + str(ret))
+
         # Also terminate our async command if it's running
         try:
             if self.__async_cmd:
                 self.__async_cmd.terminate()
                 self.__command_thread.join()
         except Exception as e:
-            logging.warn('indi_server: termination of async command failed with error ' + str(e))
+            logging.warning('indi_server: termination of async command failed with error ' + str(e))
 
     def is_running(self, port=None):
         """
@@ -339,11 +350,11 @@ class IndiServer(object):
         # If port is not specified, use the port from the last start command
         if port is None:
             port = getattr(self, '_IndiServer__port', INDI_PORT)
-        
+
         # First check if our async command is running
         if self.__async_cmd and self.__async_cmd.is_running():
             return True
-        
+
         # If not, check if there's an indiserver process running on the specified port
         try:
             import psutil
@@ -358,7 +369,7 @@ class IndiServer(object):
         except (ImportError, psutil.Error, ValueError, IndexError) as e:
             # If psutil is not available or there's an error, log it and fall back to the original method
             logging.warning(f"Error checking for indiserver process: {str(e)}")
-            
+
         return False
 
     def set_prop(self, dev, prop, element, value):
