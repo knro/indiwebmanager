@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
-import os
 import logging
-import xml.etree.ElementTree as ET
+import os
+import xml.etree.ElementTree as ET  # noqa: N817
 
 # Default INDI data directory
 INDI_DATA_DIR = os.environ.get('INDI_DATA_DIR', "/usr/share/indi/")
@@ -184,7 +184,7 @@ class DriverCollection:
             else:
                 families[drv.family] = [drv.label]
         return families
-        
+
     def apply_rules(self, rules):
         """
         Applies rules to drivers based on their labels.
@@ -194,10 +194,10 @@ class DriverCollection:
         """
         if not rules:
             return
-            
+
         for rule in rules:
             driver_label = rule.get('Driver')
-            
+
             if driver_label:
                 driver = self.by_label(driver_label)
                 if driver:

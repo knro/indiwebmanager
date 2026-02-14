@@ -1,21 +1,29 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta" 
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.setuptools]
+[tool.hatch.build.targets.wheel]
 packages = ["indiweb"]
-include-package-data = true
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "indiweb/**",
+  "README.md",
+  "LICENSE",
+  "AUTHORS",
+  "*.service",
+]
 
 [project]
 name = "indiweb"
-version = "1.1.0" # Also update app = FastAPI(version="") in main.py
+version = "1.1.0"
 authors = [
   { name="Jasem Mutlaq", email="mutlaqja@ikarustech.com" },
   { name="Juan Menendez", email="juanmb@gmail.com" }
 ]
 description = "A simple web application to manage INDI server"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 license = {text = "LGPL"}
 classifiers = [
     'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
@@ -26,10 +34,14 @@ classifiers = [
     'Topic :: Scientific/Engineering :: Astronomy',
 ]
 dependencies = [
-    "requests==2.32.4",
-    "psutil==6.0.0",
-    "bottle==0.12.25",
-    "importlib_metadata==8.5.0"
+    "requests>=2.32.4",
+    "psutil>=6.0.0",
+    "importlib_metadata>=8.5.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "jinja2>=3.1.0",
+    "asgiref>=3.8.0",
+    "a2wsgi>=1.10.0"
 ]
 
 [project.scripts]
@@ -38,6 +50,24 @@ indi-web = "indiweb.main:main"
 [project.urls]
 "Homepage" = "http://www.indilib.org/"
 
-[tool.flake8]
-ignore = ["W503", "E124", "E128", "E127", "E712"]
-max-line-length = 140
+[project.optional-dependencies]
+dev = [
+  "ruff>=0.4.0",
+  "mypy>=1.8.0",
+  "pre-commit>=3.6.0",
+]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 140
+exclude = ["indiweb.wsgi"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+disallow_untyped_defs = false
