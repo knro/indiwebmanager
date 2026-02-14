@@ -9,7 +9,7 @@ import subprocess
 from threading import Timer
 from typing import cast
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, WebSocket
 from fastapi.responses import HTMLResponse, JSONResponse
 from importlib_metadata import version
 
@@ -28,6 +28,11 @@ router = APIRouter()
 def get_state(request: Request) -> AppState:
     """Extract typed app state from request. Single cast at framework boundary."""
     return cast(AppState, request.app.state)
+
+
+def get_state_ws(websocket: WebSocket) -> AppState:
+    """Extract typed app state from WebSocket."""
+    return cast(AppState, websocket.app.state)
 
 
 def get_db(request: Request) -> Database:

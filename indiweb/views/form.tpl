@@ -27,6 +27,7 @@
         <h4>{{hostname}} INDI Web Manager</h4>
         </div>
         <div class="col-sm-6 text-right">
+          <a href="/paa" class="btn btn-default" data-toggle="tooltip" title="Polar Alignment Assistant" style="margin-top: 10px;">PAA</a>
           <a href="/docs" class="btn btn-default" style="margin-top: 10px;">API</a>
         </div>
       </div>

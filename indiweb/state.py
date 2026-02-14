@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
+
+if TYPE_CHECKING:
+    from .paa_monitor import PaaMonitor
 
 from .database import Database
 from .device import Device
@@ -27,6 +30,7 @@ class AppState:
     hostname: str
     saved_profile: str | None
     active_profile: str
+    paa_monitor: PaaMonitor | None = None
 
 
 class IndiWebApp(FastAPI):
