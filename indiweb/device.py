@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 # import os
-import re
 import logging
+import re
 from subprocess import check_output
 
 

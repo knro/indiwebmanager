@@ -36,7 +36,7 @@ $ sudo pip install indiweb
 # Usage
 
 After installing the **indiweb** package, the command **indi-web** will be
-available in your sytem PATH.
+available in your system PATH.
 
 You can obtain help about the **indi-web** command by invoking:
 
@@ -139,12 +139,60 @@ The `/docs` and `/redoc` pages provide user-friendly interfaces to explore the a
 
 ## Development
 
-To run indiweb directly from the source directory make sure prerequisits are
-installed and use:
+Create and use a virtual environment to avoid installing into system Python:
 
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -e ".[dev]"
 ```
-python3 -m indiweb.main
+
+Then run indiweb:
+
+```bash
+.venv/bin/python -m indiweb.main
 ```
+
+Run tests (use the venv):
+
+```bash
+.venv/bin/pytest tests/ -v
+```
+
+Unit and API tests run by default. Integration tests (in `tests/test_integration.py`) require `indiserver` and simulator drivers; they are skipped if not installed. To run only unit/API tests:
+
+```bash
+.venv/bin/pytest tests/ -m "not integration" -v
+```
+
+To run integration tests (with INDI installed):
+
+```bash
+.venv/bin/pytest tests/ -m integration -v
+```
+
+Run all Python versions via tox:
+
+```bash
+.venv/bin/tox run -e py39,py310,py311,py312
+```
+
+With coverage (local):
+
+```bash
+.venv/bin/pytest tests/ -m "not integration" --cov=indiweb --cov-report=term-missing --cov-report=html
+```
+
+With coverage (Docker, recommended so `htmlcov/` is owned by you):
+
+```bash
+./scripts/docker-test.sh
+```
+
+Or manually: `DOCKER_UID=$(id -u) DOCKER_GID=$(id -g) docker compose run --rm test`
+
+Coverage is printed in the terminal and an HTML report is written to `htmlcov/`. Open `htmlcov/index.html` in a browser to view it.
+
+Or activate the venv first: `source .venv/bin/activate`, then run `pytest`, `tox`, etc.
 
 # Authors
 
