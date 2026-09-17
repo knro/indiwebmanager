@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import logging
 import os
+import platform
 import queue
 import threading
 from subprocess import call, check_output
@@ -86,8 +87,12 @@ class IndiServer(object):
         """
         # Store the port for later use
         self.__port = port
-        cmd = 'indiserver -p %d -m 1000 -v -f %s -u %s > /tmp/indiserver.log 2>&1' % \
-            (port, self.__fifo, self.__sock_path)
+        if platform.system() == "Darwin":
+            cmd = 'indiserver -p %d -m 1000 -v -f %s > /tmp/indiserver.log 2>&1' % \
+                (port, self.__fifo)
+        else:
+            cmd = 'indiserver -p %d -m 1000 -v -f %s -u %s > /tmp/indiserver.log 2>&1' % \
+                (port, self.__fifo, self.__sock_path)
         logging.info(cmd)
         self.__async_cmd = AsyncSystemCommand(cmd)
         # Run the command asynchronously
