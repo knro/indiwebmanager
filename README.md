@@ -56,6 +56,32 @@ Then using your favorite web browser, go to
 running locally. If the INDI Web Manager is installed on a remote system,
 simply replace localhost with the hostname or IP address of the remote system.
 
+# PAA Live Monitor
+
+The PAA (Polar Alignment Assistant) live monitor is an optional feature that
+shows **live** polar alignment error from Ekos/KStars. It displays total,
+altitude, and azimuth error in degrees-minutes-seconds (DMS) and arcseconds,
+with direction arrows; values update as Ekos writes PAA Refresh lines to its
+log file.
+
+<img src="img/paa-monitor-mobile.jpeg" alt="PAA Live Monitor on mobile" width="320" />
+
+To enable the PAA monitor, start INDI Web Manager with `--with-paa`. You may
+optionally pass one or more log directories with `--kstars-logs DIR [DIR ...]`.
+If `--kstars-logs` is omitted, the application searches (in order):
+`~/.local/share/kstars/logs` (native KStars install) and
+`~/.var/app/org.kde.kstars/data/kstars/logs` (Flatpak). Example:
+`indi-web --with-paa` or `indi-web --with-paa --kstars-logs /path/to/kstars/logs`.
+
+**Ekos configuration (required):** In Ekos, enable **Log to file** so that PAA
+Refresh lines are written to the KStars log. Run the **Polar Alignment
+Assistant** in Ekos so the log contains PAA data. Without Log to file enabled,
+the monitor will report that no PAA data was found and prompt you to enable it.
+
+Open the PAA page in the app at [http://localhost:8624/paa](http://localhost:8624/paa)
+(when using the default port). Status is also available via REST at
+`GET /api/paa/status` and live updates via WebSocket at `/ws/paa` for integration.
+
 # Auto Start
 
 If you selected any profile as **Auto Start** then the INDI server shall be

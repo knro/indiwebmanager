@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 import socket
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +16,7 @@ from .database import Database
 from .device import Device
 from .driver import INDI_DATA_DIR, DriverCollection
 from .indi_server import INDI_CONFIG_DIR, INDI_FIFO, INDI_PORT, IndiServer
+from .paa_monitor import PaaMonitor, _default_kstars_log_dirs, paa_router
 from .routes import router, start_profile
 from .state import AppState, IndiWebApp
 
@@ -55,6 +57,10 @@ def _build_parser():
                         help='HTTP server [standalone|apache] (default: standalone')
     parser.add_argument('--sudo', '-S', action='store_true',
                         help='Run poweroff/reboot commands with sudo')
+    parser.add_argument('--kstars-logs', default=None, nargs='+',
+                        help='KStars/Ekos log directory/ies. Default: search native and Flatpak locations')
+    parser.add_argument('--with-paa', action='store_true',
+                        help='Enable the PAA (Polar Alignment Assistant) live monitor')
     return parser
 
 
@@ -71,6 +77,14 @@ def parse_args(argv=None):
                 extra_origins.append(port_origin)
     args.cors.extend(extra_origins)
     return args
+
+
+@asynccontextmanager
+async def _lifespan(app: IndiWebApp):
+    """Application lifespan: clean up PAA monitor on shutdown."""
+    yield
+    if app.state.paa_monitor is not None:
+        await app.state.paa_monitor.shutdown()
 
 
 def create_app(argv=None):
@@ -92,8 +106,11 @@ def create_app(argv=None):
                             format='%(asctime)s - %(levelname)s: %(message)s',
                             level=logging_level)
     else:
-        logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s',
-                            level=logging_level)
+        from uvicorn.logging import DefaultFormatter
+        handler = logging.StreamHandler()
+        handler.setFormatter(DefaultFormatter("%(levelprefix)s %(message)s"))
+        logging.root.addHandler(handler)
+        logging.root.setLevel(logging_level)
     logging.debug("command line arguments: " + str(vars(args)))
 
     collection = DriverCollection(args.xmldir)
@@ -104,7 +121,11 @@ def create_app(argv=None):
     collection.parse_custom_drivers(db.get_custom_drivers())
 
     templates = Jinja2Templates(directory=views_path)
-    app = IndiWebApp(title="INDI Web Manager", version=__version__)
+    paa_monitor = None
+    if getattr(args, 'with_paa', False):
+        kstars_log_dirs = args.kstars_logs or [str(d) for d in _default_kstars_log_dirs()]
+        paa_monitor = PaaMonitor(kstars_log_dirs)
+    app = IndiWebApp(title="INDI Web Manager", version=__version__, lifespan=_lifespan)
     app.state = AppState(
         db=db,
         collection=collection,
@@ -115,6 +136,7 @@ def create_app(argv=None):
         hostname=socket.gethostname(),
         saved_profile=None,
         active_profile="",
+        paa_monitor=paa_monitor,
     )
 
     app.add_middleware(
@@ -128,6 +150,8 @@ def create_app(argv=None):
     app.mount("/favicon.ico", StaticFiles(directory=views_path), name="favicon.ico")
 
     app.include_router(router)
+    if paa_monitor is not None:
+        app.include_router(paa_router)
     return app
 
 
